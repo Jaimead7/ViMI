@@ -1,0 +1,52 @@
+[build-system]
+    requires = ["setuptools", "wheel"]
+    build-backend = "setuptools.build_meta"
+
+[project]
+    name = "jaimead7-vimi"
+    version = "0.0.1"
+    description = "Interface for AI vision models."
+    authors = [
+        {name = "Jaime Álvarez", email = "alvarez.diaz.jaime1@gmail.com"},
+    ]
+    maintainers = [
+        {name = "Jaime Álvarez", email = "alvarez.diaz.jaime1@gmail.com"},
+    ]
+    readme = {file = "README.md", content-type = "text/markdown"}
+    license = "MIT"
+    license-files = [
+        "LICENSE",
+    ]
+    keywords = [
+        "AI",
+        "Vision"
+    ]
+    classifiers = [
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+    ]
+    dependencies = [
+        "ncnn",
+        "pydantic",
+        "pyyaml",
+        "typing_extensions"
+    ]
+    requires-python = ">=3.10, <3.14"
+
+    [project.optional-dependencies]
+        dev = [
+            "pytest",
+            "wheel",
+            "twine"
+        ]
+
+    [project.urls]
+        Homepage = "https://github.com/Jaimead7/ViMI"
+        Repository = "https://github.com/Jaimead7/ViMI"
+
+[tool.setuptools]
+    packages = ["vimi"]
+[tool.setuptools.package-data]
+    "vimi" = ["**/*"]
