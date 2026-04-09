@@ -50,22 +50,12 @@ def detect_model() -> ModelEngine:
     return model
 
 @fixture
-def coco_imgs() -> dict[Path, dict]:
-    imgs_path: Path = IMGS_PATH / 'coco'
-    imgs: dict[Path, dict] = {
-        imgs_path / 'bike.jpg': {
-            'result': ['bicycle', 'horse'],
-        },
-        imgs_path / 'planes.jpg': {
-            'result': ['airplane', 'airplane'],
-        }
-    }
-    for img_path in imgs.keys():
-        img: Optional[np.ndarray] = cv2.imread(img_path)
-        if img is None:
-            continue
-        imgs[img_path]['img'] = img
-    return imgs
+def obb_model() -> ModelEngine:
+    model_path: Path = MODELS_PATH / 'OBBModelNCNN'
+    model: Optional[ModelEngine] = EnginesReg.get_model(model_path)
+    if model is None:
+        raise SystemError('Error creating obb model.')
+    return model
 
 @fixture
 def imagenet_imgs() -> dict[Path, dict]:
@@ -85,29 +75,78 @@ def imagenet_imgs() -> dict[Path, dict]:
         imgs[img_path]['img'] = img
     return imgs
 
+@fixture
+def coco_imgs() -> dict[Path, dict]:
+    imgs_path: Path = IMGS_PATH / 'coco'
+    imgs: dict[Path, dict] = {
+        imgs_path / 'bike.jpg': {
+            'result': ['bicycle', 'horse'],
+        },
+        imgs_path / 'planes.jpg': {
+            'result': ['airplane', 'airplane'],
+        }
+    }
+    for img_path in imgs.keys():
+        img: Optional[np.ndarray] = cv2.imread(img_path)
+        if img is None:
+            continue
+        imgs[img_path]['img'] = img
+    return imgs
+
+@fixture
+def dota_imgs() -> dict[Path, dict]:
+    imgs_path: Path = IMGS_PATH / 'dota'
+    imgs: dict[Path, dict] = {
+        imgs_path / 'airport.jpg': {
+            'result': ['plain', 'plain', 'plain'],
+        },
+        imgs_path / 'airport.jpg': {
+            'result': ['roundabout', 'small vehicle'],
+        }
+    }
+    for img_path in imgs.keys():
+        img: Optional[np.ndarray] = cv2.imread(img_path)
+        if img is None:
+            continue
+        imgs[img_path]['img'] = img
+    return imgs
+
 
 class TestGlobal:
     def test_class_model(
         self,
         class_model: ModelEngine,
-        imagenet_imgs: dict[str, np.ndarray]
+        imagenet_imgs: dict[Path, dict]
     ) -> None:
         imgs: list[np.ndarray] = [img['img'] for img in imagenet_imgs.values()]
         results: list[Results] = class_model(imgs)
-        for result, img in zip(results, imagenet_imgs.keys()):
+        for result, img_prop in zip(results, imagenet_imgs.values()):
             if result.probs is None:
                 assert False
-            assert result.names[result.probs.top1] == imagenet_imgs[img]['result']
+            assert result.names[result.probs.top1] == img_prop['result']
 
     def test_detect_model(
         self,
         detect_model: ModelEngine,
-        coco_imgs: dict[str, np.ndarray]
+        coco_imgs: dict[Path, dict]
     ) -> None:
         imgs: list[np.ndarray] = [img['img'] for img in coco_imgs.values()]
         results: list[Results] = detect_model(imgs)
-        for result, img in zip(results, coco_imgs.keys()):
+        for result, img_prop in zip(results, coco_imgs.values()):
             if result.boxes is None:
                 assert False
             res_names: list[str] = [result.names[i] for i in result.boxes.cls]
-            assert res_names == coco_imgs[img]['result']
+            assert res_names == img_prop['result']
+
+    def test_obb_model(
+        self,
+        obb_model: ModelEngine,
+        dota_imgs: dict[Path, dict]
+    ) -> None:
+        imgs: list[np.ndarray] = [img['img'] for img in dota_imgs.values()]
+        results: list[Results] = obb_model(imgs)
+        for result, img_prop in zip(results, dota_imgs.values()):
+            if result.obb is None:
+                assert False
+            res_names: list[str] = [result.names[i] for i in result.obb.cls]
+            assert res_names == img_prop['result']
