@@ -26,7 +26,7 @@ py -m pip install jaimead7-vimi
 ```
 
 ## Usage
-Create a models folder with a valid structure. You can find examples in [./test/models/](./test/models/).
+Create a model folder with a valid structure. You can find examples in [./test/models/](./test/models/).
 
 ```python
 from pathlib import Path
@@ -47,15 +47,16 @@ IMGS_PATHS: list[Path] = [
 
 model: Optional[ModelEngine] = EnginesReg.get_model(MODEL_PATH)
 if model is None:
-    raise SystemError(f'Cant\'t open the model "{MODEL_PATH}".')
+    raise RuntimeError(f'Cant\'t open the model "{MODEL_PATH}".')
 
 results: list[Results] = model(IMGS_PATHS)
 
-if len(results) >= 0:
-    for result, img in zip(results, IMGS_PATHS):
-        cv2.imshow(f'{img.name}', result.plot())
-    _: int = cv2.waitKey(0)
-    cv2.destroyAllWindows()
+if len(results) != len(IMGS_PATHS):
+    raise RuntimeError(f'Error processing images: Expected {len(IMGS_PATHS)} Results, got {len(results)}.')
+for result, img in zip(results, IMGS_PATHS):
+    cv2.imshow(f'{img.name}', result.plot())
+_: int = cv2.waitKey(0)
+cv2.destroyAllWindows()
 ```
 
 ## Available model interfaces
