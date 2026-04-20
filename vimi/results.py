@@ -20,12 +20,13 @@
 
 
 from functools import lru_cache
+from math import degrees
 from typing import Any, Optional
 
 import numpy as np
 from typing_extensions import Self, TypedDict
 
-from .plot import PALLETTE, Color, plot_label, plot_rect
+from .plot import PALLETTE, Color, plot_label, plot_polygon, plot_rect
 
 
 def _parse_np_str(array: np.ndarray) -> str:
@@ -335,16 +336,93 @@ class Keypoints(ResultDataWrapper):
 
 
 class OBB(ResultDataWrapper):
-    #TODO
     def __init__(
         self,
-        obb: np.ndarray,  # 
+        obb: np.ndarray,  # [xc, yc, w, h, rad, conf, id] x n
         orig_shape: tuple[int, int]  # (h, w)
     ) -> None:
-        if obb.ndim == 2:
+        if obb.ndim == 1:
             obb = obb[None, :]
         assert obb.ndim == 2
+        assert obb.shape[-1] == 6
         super().__init__(data= obb, orig_shape= orig_shape)
+
+    def __repr__(self) -> str:
+        result: str = 'Boxes object:\n'
+        result += f'cls: {self.cls}\n'
+        result += f'conf: {self.conf}\n'
+        result += f'data: {_parse_np_str(self.data)}\n'
+        result += f'orig_shape: {self.orig_shape}\n'
+        result += f'xywhr: {_parse_np_str(self.xywhr)}\n'
+        result += f'xyxyxyxy: {_parse_np_str(self.xyxyxyxy)}\n'
+        result += f'xyxyxyxyn: {_parse_np_str(self.xyxyxyxyn)}\n'
+        result += f'xyxy: {_parse_np_str(self.xyxy)}\n'
+        return result
+
+    @property
+    @lru_cache(maxsize=2)
+    def xywhr(self) -> np.ndarray:
+        return self.data[:, :5]
+
+    @property
+    @lru_cache(maxsize=2)
+    def conf(self) -> np.ndarray:
+        return self.data[:, -2]
+
+    @property
+    @lru_cache(maxsize=2)
+    def cls(self) -> np.ndarray:
+        return self.data[:, -1]
+
+    @property
+    @lru_cache(maxsize=2)
+    def r(self) -> float:
+        return self.data[4]
+
+    @property
+    @lru_cache(maxsize=2)
+    def r_deg(self) -> float:
+        return degrees(self.r)
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxyxyxy(self) -> np.ndarray:
+        return OBB.xywhr2xyxyxyxy(self.xywhr)
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxyxyxyn(self) -> np.ndarray:
+        xyxyxyxyn: np.ndarray = self.xyxyxyxy.copy()
+        xyxyxyxyn[..., 0] /= self.orig_shape[1]
+        xyxyxyxyn[..., 1] /= self.orig_shape[0]
+        return xyxyxyxyn
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxy(self) -> np.ndarray:
+        x: np.ndarray = self.xyxyxyxy[..., 0]
+        y: np.ndarray = self.xyxyxyxy[..., 1]
+        return np.stack([x.min(1), y.min(1), x.max(1), y.max(1)], -1)
+
+    @staticmethod
+    def xywhr2xyxyxyxy(xywhr: np.ndarray) -> np.ndarray:
+        ctr: np.ndarray = xywhr[..., :2]
+        w: float
+        h: float
+        angle: float
+        w, h, angle = (float(xywhr[..., i : i + 1]) for i in range(2, 5))
+        cos_value: float
+        sin_value: float
+        cos_value, sin_value = np.cos(angle), np.sin(angle)
+        vec1: list[float] = [w / 2 * cos_value, w / 2 * sin_value]
+        vec2: list[float] = [-h / 2 * sin_value, h / 2 * cos_value]
+        vec1_array: np.ndarray = np.concatenate(vec1, -1)
+        vec2_array: np.ndarray = np.concatenate(vec2, -1)
+        pt1 = ctr + vec1_array + vec2
+        pt2 = ctr + vec1_array - vec2_array
+        pt3 = ctr - vec1_array - vec2_array
+        pt4 = ctr - vec1_array + vec2_array
+        return np.stack([pt1, pt2, pt3, pt4], -2)
 
     def plot(
         self,
@@ -371,7 +449,28 @@ class OBB(ResultDataWrapper):
         *args,
         **kwargs
     ) -> np.ndarray:
-        ...
+        if not(boxes or labels or conf):
+            return img
+        for i in range(self.data):
+            if boxes:
+                plot_polygon(
+                    img= img,
+                    vertex= self.xyxyxyxy[i],
+                    cls= int(self.cls[i]),
+                    line_width= line_width,
+                    pallette= pallette
+                )
+            if labels or conf:
+                plot_label(
+                    img= img,
+                    rect= self.data[i],
+                    names= names,
+                    conf= conf,
+                    labels= labels,
+                    font_size= font_size,
+                    line_width= line_width,
+                    pallette= pallette
+                )
         return img
 
 
@@ -385,7 +484,7 @@ class Results:
         masks: Optional[np.ndarray] = None,  # Segmentetion masks: 
         probs: Optional[np.ndarray] = None,  # Classification probs: [prob1, prob2, prob3, ...]
         keypoints: Optional[np.ndarray] = None,  # Keypoints: 
-        obb: Optional[np.ndarray] = None,  # Oriented boxes: [] x n
+        obb: Optional[np.ndarray] = None,  # Oriented boxes: [xc, yc, w, h, rad, conf, id] x n
         speed: Optional[SpeedDict] = None
     ) -> None:
         self.orig_img: np.ndarray = orig_img
