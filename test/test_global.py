@@ -97,10 +97,10 @@ def coco_imgs() -> dict[Path, dict]:
 def dota_imgs() -> dict[Path, dict]:
     imgs_path: Path = IMGS_PATH / 'dota'
     imgs: dict[Path, dict] = {
-        imgs_path / 'airport.jpg': {
+        imgs_path / 'airport.png': {
             'result': ['plain', 'plain', 'plain'],
         },
-        imgs_path / 'roundabout.jpg': {
+        imgs_path / 'roundabout.png': {
             'result': ['roundabout', 'small vehicle'],
         }
     }
