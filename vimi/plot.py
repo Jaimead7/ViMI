@@ -60,25 +60,6 @@ def get_font_color(color: Color) -> Color:
     brightness: float = 0.299 * r + 0.587 * g + 0.114 * b
     return (0, 0, 0) if brightness > 127.5 else (255, 255, 255)
 
-def plot_rect(
-    img: np.ndarray,
-    rect: np.ndarray,  # [px0, py0, px1, py1, ..., cls]
-    line_width: float | None = None,
-    pallette: tuple[Color, ...] = PALLETTE
-) -> None:
-    if line_width is None:
-        line_width = 2
-    pt1: tuple = (int(rect[0]), int(rect[1]))
-    pt2: tuple = (int(rect[2]), int(rect[3]))
-    color: Color = get_color(int(rect[-1]), pallette)
-    cv2.rectangle(
-        img= img,
-        pt1= pt1,
-        pt2= pt2,
-        color= color,
-        thickness= int(line_width)
-    )
-
 def plot_polygon(
     img: np.ndarray,
     vertex: np.ndarray,  # [px0, py0, px1, py1, px2, py2, ...]
@@ -104,7 +85,9 @@ def plot_polygon(
 
 def plot_label(
     img: np.ndarray,
-    rect: np.ndarray,
+    p0: np.ndarray,
+    cls: int,
+    conf_val: float,
     names: dict[int, str],
     conf: bool = True,
     labels: bool = True,
@@ -117,7 +100,7 @@ def plot_label(
         font_size = 0.5
     if line_width is None:
         line_width = 2
-    color: Color = get_color(int(rect[-1]), pallette)
+    color: Color = get_color(cls, pallette)
     font: int = cv2.FONT_HERSHEY_SIMPLEX
     font_color: tuple = get_font_color(color)
     img_shape: tuple = img.shape
@@ -125,11 +108,11 @@ def plot_label(
     text: str = ''
     if labels:
         try:
-            text: str = f'{names[int(rect[-1])]}'
+            text: str = f'{names[cls]}'
         except Exception as e:
-            text: str = f'{int(rect[-1])}'
+            text: str = f'{cls}'
     if conf:
-        text += f' {rect[-2]:.2f}'
+        text += f' {conf_val:.2f}'
     text = text.strip()
     # Text size
     (txt_w, txt_h), _ = cv2.getTextSize(
@@ -140,16 +123,16 @@ def plot_label(
     )
     # Text p0
     inf_left_corner: list[int] = [
-        int(rect[0]),
-        int(rect[1] - line_width)
+        int(p0[0]),
+        int(p0[1] - line_width)
     ]
     text_p0: list[int] = [
-        int(rect[0] + line_width),
-        int(rect[1] - 2 * line_width)
+        int(p0[0] + line_width),
+        int(p0[1] - 2 * line_width)
     ]
     sup_right_corner: list[int] = [
-        int(rect[0] + txt_w + line_width),
-        int(rect[1] - txt_h - 3 * line_width)
+        int(p0[0] + txt_w + line_width),
+        int(p0[1] - txt_h - 3 * line_width)
     ]
     # Fix text out of borders X
     if sup_right_corner[0] > img_shape[1]:

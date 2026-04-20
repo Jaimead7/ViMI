@@ -26,7 +26,7 @@ from typing import Any, Optional
 import numpy as np
 from typing_extensions import Self, TypedDict
 
-from .plot import PALLETTE, Color, plot_label, plot_polygon, plot_rect
+from .plot import PALLETTE, Color, plot_label, plot_polygon
 
 
 def _parse_np_str(array: np.ndarray) -> str:
@@ -106,6 +106,25 @@ class Boxes(ResultDataWrapper):
     def xywhn(self) -> np.ndarray:
         return self.norm_coords(self.xywh, self.orig_shape)
 
+    @property
+    @lru_cache(maxsize=2)
+    def vertex(self) -> np.ndarray:
+        xyxy: np.ndarray = self.xyxy.copy()
+        x1: np.ndarray = xyxy[:, 0]
+        y1: np.ndarray = xyxy[:, 1]
+        x2: np.ndarray = xyxy[:, 2]
+        y2: np.ndarray = xyxy[:, 3]
+        return np.column_stack([
+            np.minimum(x1, x2),
+            np.minimum(y1, y2),
+            np.maximum(x1, x2),
+            np.minimum(y1, y2),
+            np.minimum(x1, x2),
+            np.maximum(y1, y2),
+            np.maximum(x1, x2),
+            np.maximum(y1, y2)
+        ])
+
     @staticmethod
     def xyxy2xywh(xyxy: np.ndarray) -> np.ndarray:
         wh = xyxy[:, 2:] - xyxy[:, :2]
@@ -138,18 +157,21 @@ class Boxes(ResultDataWrapper):
     ) -> np.ndarray:
         if not(boxes or labels or conf):
             return img
-        for rect in self.data:
+        for i in range(self.data):
             if boxes:
-                plot_rect(
+                plot_polygon(
                     img= img,
-                    rect= rect,
+                    vertex= self.vertex[i],
+                    cls= self.cls[i],
                     line_width= line_width,
                     pallette= pallette
                 )
             if labels or conf:
                 plot_label(
                     img= img,
-                    rect= rect,
+                    p0= self.xyxy[:2],
+                    cls= self.cls[i],
+                    conf_val= self.conf[i],
                     names= names,
                     conf= conf,
                     labels= labels,
@@ -238,6 +260,20 @@ class Probs(ResultDataWrapper):
     def top4conf(self) -> np.ndarray:
         return self.data[self.top5]
 
+    @property
+    @lru_cache(maxsize= 1)
+    def vertex(self) -> np.ndarray:
+        return np.array((
+            0,
+            0,
+            self.orig_shape[1],
+            0,
+            self.orig_shape[1],
+            self.orig_shape[0],
+            0,
+            self.orig_shape[0]
+        ))
+
     def plot(
         self,
         img: np.ndarray,
@@ -265,25 +301,20 @@ class Probs(ResultDataWrapper):
     ) -> np.ndarray:
         if not(probs or labels or conf):
             return img
-        rect: np.ndarray = np.array((
-            0,
-            0,
-            self.orig_shape[1],
-            self.orig_shape[0],
-            self.top1conf,
-            self.top1
-        ))
         if probs:
-            plot_rect(
+            plot_polygon(
                 img= img,
-                rect= rect,
+                vertex= self.vertex,
+                cls= self.top1,
                 line_width= line_width,
                 pallette= pallette
             )
         if labels or conf:
             plot_label(
                 img= img,
-                rect= rect,
+                p0= self.vertex[:2],
+                cls= self.top1,
+                conf_val= self.top1conf,
                 names= names,
                 conf= conf,
                 labels= labels,
@@ -463,7 +494,9 @@ class OBB(ResultDataWrapper):
             if labels or conf:
                 plot_label(
                     img= img,
-                    rect= self.data[i],
+                    p0= self.xyxyxyxy[i][:2],
+                    cls= int(self.cls[i]),
+                    conf_val= self.conf[i],
                     names= names,
                     conf= conf,
                     labels= labels,
