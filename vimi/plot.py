@@ -60,25 +60,6 @@ def get_font_color(color: Color) -> Color:
     brightness: float = 0.299 * r + 0.587 * g + 0.114 * b
     return (0, 0, 0) if brightness > 127.5 else (255, 255, 255)
 
-def plot_rect(
-    img: np.ndarray,
-    rect: np.ndarray,  # [px0, py0, px1, py1, ..., cls]
-    line_width: float | None = None,
-    pallette: tuple[Color, ...] = PALLETTE
-) -> None:
-    if line_width is None:
-        line_width = 2
-    pt1: tuple = (int(rect[0]), int(rect[1]))
-    pt2: tuple = (int(rect[2]), int(rect[3]))
-    color: Color = get_color(int(rect[-1]), pallette)
-    cv2.rectangle(
-        img= img,
-        pt1= pt1,
-        pt2= pt2,
-        color= color,
-        thickness= int(line_width)
-    )
-
 def plot_polygon(
     img: np.ndarray,
     vertex: np.ndarray,  # [px0, py0, px1, py1, px2, py2, ...]
