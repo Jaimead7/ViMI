@@ -29,11 +29,11 @@ import cv2
 import ncnn
 import numpy as np
 
-from ..filesystem import ModelFolder, NCNNModelFolder
+from ..filesystem import NCNNModelFolder
 from ..filters import CoordsTransformer, bgr2rgb, gray2bgr, redim
 from ..logs import vimi_logger
 from ..results import Boxes, Results, SpeedDict
-from .model_engine import EnginesReg, ModelEngine
+from .model_engine import EnginesReg
 
 
 class Postprocessor:
@@ -164,6 +164,56 @@ class DetectPostProcessor(Postprocessor):
             inds = np.where(iou <= cls.IOU_THRESHOLD)[0]
             order = order[inds + 1]
         return boxes[keep]
+
+
+@PostprocessorsReg.register('OBB')
+class OBBPostProcessor(Postprocessor):
+    GLOBAL_CONF_THRESHOLD: float = 0.25
+    IOU_THRESHOLD: float = 0.75
+
+    def __call__(
+        self,
+        result: Results,
+        ncc_out: ncnn.Mat,
+        transformers: Sequence[CoordsTransformer]
+    ) -> Results:
+        out_array: np.ndarray = self.parse_ncnn_out(ncc_out)
+        boxes: np.ndarray = self.filter_boxes(out_array)
+        for transformer in transformers[::-1]:
+            boxes = transformer.res2org(boxes)
+        result.set_obb(boxes)
+        return result
+
+    @classmethod
+    def parse_ncnn_out(
+        cls,
+        model_out: ncnn.Mat
+    ) -> np.ndarray:
+        model_out_array: np.ndarray = np.array(model_out).T
+        xywhr: np.ndarray = model_out_array[:, :5]
+        all_conf: np.ndarray = model_out_array[:, 5:]
+        max_conf: np.ndarray = np.max(all_conf, axis= 1, keepdims= True)
+        max_index: np.ndarray = np.argmax(all_conf, axis= 1, keepdims= True)
+        return np.hstack((xywhr, max_conf, max_index))
+
+    @classmethod
+    def filter_boxes(
+        cls,
+        boxes: np.ndarray
+    ) -> np.ndarray:
+        mask = boxes[:, 4] > cls.GLOBAL_CONF_THRESHOLD
+        pot_boxes: np.ndarray = boxes[mask]
+        filter_boxes: np.ndarray = cls.nms(pot_boxes)
+        return filter_boxes
+
+    @classmethod
+    def nms(
+        cls,
+        boxes: np.ndarray
+    ) -> np.ndarray:
+        #TODO: Implement IoU with rotated boxes
+        vimi_logger.warning(f'{cls.__name__}.nms() not implemented.')
+        return boxes
 
 
 @EnginesReg.register('NCNN')
