@@ -79,6 +79,29 @@ def plot_rect(
         thickness= int(line_width)
     )
 
+def plot_polygon(
+    img: np.ndarray,
+    vertex: np.ndarray,  # [px0, py0, px1, py1, px2, py2, ...]
+    cls: int,
+    line_width: float | None = None,
+    pallette: tuple[Color, ...] = PALLETTE
+) -> None:
+    if line_width is None:
+        line_width = 2
+    color: Color = get_color(cls, pallette)
+    if len(vertex) % 2 != 0:
+        msg: str = f'A vertex array should contain an even number of elements. Got {len(vertex)}. Polygon won\'t be plotted.'
+        vimi_logger.error(msg)
+        return None
+    vertex = vertex.reshape(-1, 2).astype(np.int32)
+    cv2.polylines(
+        img,
+        [vertex],
+        isClosed= True,
+        color= color,
+        thickness= int(line_width)
+    )
+
 def plot_label(
     img: np.ndarray,
     p0: np.ndarray,
