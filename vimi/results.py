@@ -130,9 +130,9 @@ class Boxes(ResultDataWrapper):
             np.minimum(y1, y2),
             np.maximum(x1, x2),
             np.minimum(y1, y2),
-            np.minimum(x1, x2),
-            np.maximum(y1, y2),
             np.maximum(x1, x2),
+            np.maximum(y1, y2),
+            np.minimum(x1, x2),
             np.maximum(y1, y2)
         ])
 
