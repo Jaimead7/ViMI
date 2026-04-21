@@ -181,7 +181,7 @@ class OBBPostProcessor(Postprocessor):
         out_array: np.ndarray = self.parse_ncnn_out(ncc_out)
         boxes: np.ndarray = self.filter_boxes(out_array)
         for transformer in transformers[::-1]:
-            boxes = transformer.res2org(boxes) #FIXME:
+            boxes = transformer.xywh2org(boxes)
         result.set_obb(boxes)
         return result
 
