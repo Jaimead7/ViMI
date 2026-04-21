@@ -385,7 +385,7 @@ class OBB(ResultDataWrapper):
         super().__init__(data= obb, orig_shape= orig_shape)
 
     def __repr__(self) -> str:
-        result: str = 'Boxes object:\n'
+        result: str = 'OBB object:\n'
         result += f'cls: {self.cls}\n'
         result += f'conf: {self.conf}\n'
         result += f'data: {_parse_np_str(self.data)}\n'
