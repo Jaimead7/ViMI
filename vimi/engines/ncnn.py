@@ -226,12 +226,11 @@ class OBBPostProcessor(Postprocessor):
             for j in range(i+1, len(sorted_arr)):
                 if j in rm:
                     continue
-                iou_res: bool = iou(
+                iou_res: float = iou(
                     xyxyxyxy2poly(xyxyxyxy[i]),
-                    xyxyxyxy2poly(xyxyxyxy[j]),
-                    threshold= cls.IOU_THRESHOLD
+                    xyxyxyxy2poly(xyxyxyxy[j])
                 )
-                if iou_res:
+                if iou_res > cls.IOU_THRESHOLD:
                     rm.add(j)
         filter_arr: np.ndarray = sorted_arr[keep]
         return filter_arr
