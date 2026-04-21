@@ -376,7 +376,7 @@ class OBB(ResultDataWrapper):
         if obb.ndim == 1:
             obb = obb[None, :]
         assert obb.ndim == 2
-        assert obb.shape[-1] == 6
+        assert obb.shape[-1] == 7
         super().__init__(data= obb, orig_shape= orig_shape)
 
     def __repr__(self) -> str:
