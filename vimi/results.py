@@ -467,7 +467,7 @@ class OBB(ResultDataWrapper):
     ) -> np.ndarray:
         if not(boxes or labels or conf):
             return img
-        for i in range(self.data):
+        for i in range(len(self.data)):
             if boxes:
                 plot_polygon(
                     img= img,
