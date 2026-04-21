@@ -267,19 +267,6 @@ class Probs(ResultDataWrapper):
     def top4conf(self) -> np.ndarray:
         return self.data[self.top5]
 
-    @cached_property
-    def vertex(self) -> np.ndarray:
-        return np.array((
-            0,
-            0,
-            self.orig_shape[1],
-            0,
-            self.orig_shape[1],
-            self.orig_shape[0],
-            0,
-            self.orig_shape[0]
-        ))
-
     def plot(
         self,
         img: np.ndarray,
@@ -305,20 +292,12 @@ class Probs(ResultDataWrapper):
         *args,
         **kwargs
     ) -> np.ndarray:
-        if not(probs or labels or conf):
+        if not(probs):
             return img
-        if probs:
-            plot_polygon(
-                img= img,
-                vertex= self.vertex,
-                cls= self.top1,
-                line_width= line_width,
-                pallette= pallette
-            )
         if labels or conf:
             plot_label(
                 img= img,
-                p0= self.vertex[:2],
+                p0= np.array([0, 0]),
                 cls= self.top1,
                 conf_val= self.top1conf,
                 names= names,
