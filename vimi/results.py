@@ -19,7 +19,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from functools import lru_cache
+import inspect
+from functools import cached_property
 from math import degrees
 from typing import Any, Optional
 
@@ -47,11 +48,27 @@ class SpeedDict(TypedDict):
 
 class ResultDataWrapper:
     def __init__(self, data: np.ndarray, orig_shape: tuple[int, int]) -> None:
-        self.data: np.ndarray = data
+        self.data = data
         self.orig_shape: tuple[int, int] = orig_shape[:2]
 
     def __getitem__(self, idx: int | slice) -> Self:
         return self.__class__(self.data[idx], self.orig_shape)
+
+    @property
+    def data(self) -> np.ndarray:
+        return self._data
+    
+    @data.setter
+    def data(self, value: np.ndarray) -> None:
+        self._data: np.ndarray = value
+        self.reset_cached_props()
+
+    def reset_cached_props(self) -> None:
+        for name, attr in inspect.getmembers(self.__class__):
+            if not isinstance(attr, cached_property):
+                continue
+            if name in self.__dict__:
+                del self.__dict__[name]
 
 
 class Boxes(ResultDataWrapper):
@@ -77,38 +94,31 @@ class Boxes(ResultDataWrapper):
         result += f'xyxyn: {_parse_np_str(self.xyxyn)}'
         return result
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xyxy(self) -> np.ndarray:
         return self.data[:, :4]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def conf(self) -> np.ndarray:
         return self.data[:, -2]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def cls(self) -> np.ndarray:
         return self.data[:, -1]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xywh(self) -> np.ndarray:
         return self.xyxy2xywh(self.xyxy)
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xyxyn(self) -> np.ndarray:
         return self.norm_coords(self.xyxy, self.orig_shape)
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xywhn(self) -> np.ndarray:
         return self.norm_coords(self.xywh, self.orig_shape)
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def vertex(self) -> np.ndarray:
         xyxy: np.ndarray = self.xyxy.copy()
         x1: np.ndarray = xyxy[:, 0]
@@ -241,28 +251,23 @@ class Probs(ResultDataWrapper):
         result += f'orig_shape: {self.orig_shape}\n'
         return result
 
-    @property
-    @lru_cache(maxsize= 1)
+    @cached_property
     def top1(self) -> int:
         return int(self.data.argmax())
 
-    @property
-    @lru_cache(maxsize= 1)
+    @cached_property
     def top5(self) -> list[int]:
         return (-self.data).argsort(axis= 0)[:5].tolist()
 
-    @property
-    @lru_cache(maxsize= 1)
+    @cached_property
     def top1conf(self) -> float:
         return float(self.data[self.top1])
 
-    @property
-    @lru_cache(maxsize= 1)
+    @cached_property
     def top4conf(self) -> np.ndarray:
         return self.data[self.top5]
 
-    @property
-    @lru_cache(maxsize= 1)
+    @cached_property
     def vertex(self) -> np.ndarray:
         return np.array((
             0,
@@ -391,46 +396,38 @@ class OBB(ResultDataWrapper):
         result += f'xyxy: {_parse_np_str(self.xyxy)}\n'
         return result
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xywhr(self) -> np.ndarray:
         return self.data[:, :5]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def conf(self) -> np.ndarray:
         return self.data[:, -2]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def cls(self) -> np.ndarray:
         return self.data[:, -1]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def r(self) -> float:
         return self.data[4]
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def r_deg(self) -> float:
         return degrees(self.r)
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xyxyxyxy(self) -> np.ndarray:
         return xywhr2xyxyxyxy(self.xywhr)
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xyxyxyxyn(self) -> np.ndarray:
         xyxyxyxyn: np.ndarray = self.xyxyxyxy.copy()
         xyxyxyxyn[..., 0] /= self.orig_shape[1]
         xyxyxyxyn[..., 1] /= self.orig_shape[0]
         return xyxyxyxyn
 
-    @property
-    @lru_cache(maxsize=2)
+    @cached_property
     def xyxy(self) -> np.ndarray:
         x: np.ndarray = self.xyxyxyxy[:, [0, 2, 4, 6]]
         y: np.ndarray = self.xyxyxyxy[:, [1, 3, 5, 7]]
