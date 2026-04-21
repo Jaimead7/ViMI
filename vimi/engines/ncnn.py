@@ -211,9 +211,23 @@ class OBBPostProcessor(Postprocessor):
         cls,
         boxes: np.ndarray
     ) -> np.ndarray:
-        #TODO: Implement IoU with rotated boxes
-        vimi_logger.warning(f'{cls.__name__}.nms() not implemented.')
-        return boxes
+        if len(boxes) == 0:
+            return np.array([])
+        sorted_arr: np.ndarray = boxes[boxes[:, -2].argsort()[::-1]]
+        keep: list[int] = []
+        rm: set[int] = set()
+        for i in range(len(sorted_arr)):
+            if i in rm:
+                continue
+            keep.append(i)
+            j: int = i + 1
+            for j in range(i+1, len(sorted_arr)):
+                if j in rm:
+                    continue
+                if cls.iou(sorted_arr[i], sorted_arr[j]):
+                    rm.add(j)
+        filter_arr: np.ndarray = sorted_arr[keep]
+        return filter_arr
 
 
 @EnginesReg.register('NCNN')
