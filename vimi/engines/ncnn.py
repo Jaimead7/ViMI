@@ -33,6 +33,7 @@ from ..filesystem import NCNNModelFolder
 from ..filters import CoordsTransformer, bgr2rgb, gray2bgr, redim
 from ..logs import vimi_logger
 from ..results import Boxes, Results, SpeedDict
+from ..utils.boxes import iou, xywhr2xyxyxyxy, xyxyxyxy2poly
 from .model_engine import EnginesReg
 
 
@@ -180,7 +181,7 @@ class OBBPostProcessor(Postprocessor):
         out_array: np.ndarray = self.parse_ncnn_out(ncc_out)
         boxes: np.ndarray = self.filter_boxes(out_array)
         for transformer in transformers[::-1]:
-            boxes = transformer.res2org(boxes)
+            boxes = transformer.res2org(boxes) #FIXME:
         result.set_obb(boxes)
         return result
 
@@ -214,6 +215,7 @@ class OBBPostProcessor(Postprocessor):
         if len(boxes) == 0:
             return np.array([])
         sorted_arr: np.ndarray = boxes[boxes[:, -2].argsort()[::-1]]
+        xyxyxyxy: np.ndarray = xywhr2xyxyxyxy(sorted_arr)
         keep: list[int] = []
         rm: set[int] = set()
         for i in range(len(sorted_arr)):
@@ -224,7 +226,12 @@ class OBBPostProcessor(Postprocessor):
             for j in range(i+1, len(sorted_arr)):
                 if j in rm:
                     continue
-                if cls.iou(sorted_arr[i], sorted_arr[j]):
+                iou_res: bool = iou(
+                    xyxyxyxy2poly(xyxyxyxy[i]),
+                    xyxyxyxy2poly(xyxyxyxy[j]),
+                    threshold= cls.IOU_THRESHOLD
+                )
+                if iou_res:
                     rm.add(j)
         filter_arr: np.ndarray = sorted_arr[keep]
         return filter_arr
