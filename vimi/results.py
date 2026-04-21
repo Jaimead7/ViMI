@@ -19,7 +19,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from functools import lru_cache
+import inspect
+from functools import cached_property, lru_cache
 from math import degrees
 from typing import Any, Optional
 
@@ -47,11 +48,27 @@ class SpeedDict(TypedDict):
 
 class ResultDataWrapper:
     def __init__(self, data: np.ndarray, orig_shape: tuple[int, int]) -> None:
-        self.data: np.ndarray = data
+        self.data = data
         self.orig_shape: tuple[int, int] = orig_shape[:2]
 
     def __getitem__(self, idx: int | slice) -> Self:
         return self.__class__(self.data[idx], self.orig_shape)
+
+    @property
+    def data(self) -> np.ndarray:
+        return self._data
+    
+    @data.setter
+    def data(self, value: np.ndarray) -> None:
+        self._data: np.ndarray = value
+        self.reset_cached_props()
+
+    def reset_cached_props(self) -> None:
+        for name, attr in inspect.getmembers(self.__class__):
+            if not isinstance(attr, cached_property):
+                continue
+            if name in self.__dict__:
+                del self.__dict__[name]
 
 
 class Boxes(ResultDataWrapper):
