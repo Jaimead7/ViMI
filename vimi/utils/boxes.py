@@ -32,6 +32,15 @@ def xywhr2xyxyxyxy(xywhr: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: n x [x1, y1, x2, y2, x3, y3, x4, y4] with the corners coords of the box.
     """
+    if not isinstance(xywhr, np.ndarray):
+        msg: str = f'xywhr must be a np.ndarrya, but got {type(xywhr)}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    shape = xywhr.shape
+    if xywhr.ndim != 2 or shape[0] == 0 or shape[1] < 5:
+        msg: str = f'xywhr shape must be (n,5+), but got {shape}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
     ctr: np.ndarray = xywhr[..., :2]
     w: float
     h: float
