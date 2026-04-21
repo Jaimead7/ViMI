@@ -33,7 +33,7 @@ from ..filesystem import NCNNModelFolder
 from ..filters import CoordsTransformer, bgr2rgb, gray2bgr, redim
 from ..logs import vimi_logger
 from ..results import Boxes, Results, SpeedDict
-from ..utils.boxes import iou, xywhr2xyxyxyxy, xyxyxyxy2poly
+from ..utils.boxes import iou, xywh2xyxy, xywhr2xyxyxyxy, xyxyxyxy2poly
 from .model_engine import EnginesReg
 
 
@@ -121,7 +121,7 @@ class DetectPostProcessor(Postprocessor):
     ) -> np.ndarray:
         model_out_array: np.ndarray = np.array(model_out).T
         xywh: np.ndarray = model_out_array[:, :4]
-        xyxy: np.ndarray = Boxes.xywh2xyxy(xywh)
+        xyxy: np.ndarray = xywh2xyxy(xywh)
         all_conf: np.ndarray = model_out_array[:, 4:]
         max_conf: np.ndarray = np.max(all_conf, axis= 1, keepdims= True)
         max_index: np.ndarray = np.argmax(all_conf, axis= 1, keepdims= True)

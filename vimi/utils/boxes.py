@@ -25,17 +25,91 @@ from shapely.geometry import Polygon
 from ..logs import vimi_logger
 
 
+def norm_coords(coords: np.ndarray, img_size: tuple[int, int]) -> np.ndarray:
+    """Normalize an array for a given img_size. It will scale even columns with the image width and odd columns with the image height.
+    Args:
+        coords (np.ndarray): n x [x1, y1, x2, y2, ...] array with the coordinates to normalize.
+        img_size (tuple[int, int]): (w, h) tuple with the size of the image.
+    Raises:
+        ValueError: On input shape not like (n, even).
+    Returns:
+        np.ndarray: Normalized array.
+    """
+    if not isinstance(coords, np.ndarray):
+        msg: str = f'coords must be a np.ndarray, but got {type(coords)}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    if coords.shape[-1] % 2 != 0:
+        msg: str = f'coords must have an even number of columns, but got {type(coords.shape[-1])}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    coords_pairs: int = coords.shape[-1] // 2
+    norm_array: np.ndarray = np.array(img_size * coords_pairs)
+    return coords / norm_array
+
+def xywh2xyxy(xywh: np.ndarray) -> np.ndarray:
+    """Get a box representation by the top-left and bottom-right corners.
+    Args:
+        xywh (np.ndarray): n x [xc, yc, w, h, ...] array boxes center-dimensions representation.
+    Raises:
+        ValueError: On input shape not like (n, 4+).
+    Returns:
+        np.ndarray: n x [x1, y1, x2, y2, ...] array with boxes two-corner representation.
+    """
+    if not isinstance(xywh, np.ndarray):
+        msg: str = f'xywh must be a np.ndarray, but got {type(xywh)}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    shape = xywh.shape
+    if xywh.ndim != 2 or shape[0] == 0 or shape[1] < 4:
+        msg: str = f'xywh shape must be (n, 4+), but got {shape}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    extra_cols: np.ndarray | None = xywh[..., 4:] if shape[1] > 4 else None
+    x0y0 = xywh[:, :2] - xywh[:, 2:] / 2
+    x1y1 = x0y0 + xywh[:, 2:]
+    res: np.ndarray = np.concatenate((x0y0, x1y1), axis=1)
+    if extra_cols is not None:
+        res = np.concatenate([res, extra_cols], axis= 1)
+    return res
+
+def xyxy2xywh(xyxy: np.ndarray) -> np.ndarray:
+    """Get a box representated by the center, width and height.
+    Args:
+        xyxy (np.ndarray): n x [x1, y1, x2, y2, ...] array with boxes two-corner representation.
+    Raises:
+        ValueError: On input shape not like (n, 4+).
+    Returns:
+        np.ndarray: n x [xc, yc, w, h, ...] array boxes center-dimensions representation.
+    """
+    if not isinstance(xyxy, np.ndarray):
+        msg: str = f'xyxy must be a np.ndarray, but got {type(xyxy)}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    shape = xyxy.shape
+    if xyxy.ndim != 2 or shape[0] == 0 or shape[1] < 4:
+        msg: str = f'xyxy shape must be (n, 4+), but got {shape}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    extra_cols: np.ndarray | None = xyxy[..., 4:] if shape[1] > 4 else None
+    wh = xyxy[:, 2:] - xyxy[:, :2]
+    xy = xyxy[:, :2] + wh / 2
+    res: np.ndarray = np.concatenate((xy, wh), axis=1)
+    if extra_cols is not None:
+        res = np.concatenate([res, extra_cols], axis= 1)
+    return res
+
 def xywhr2xyxyxyxy(xywhr: np.ndarray) -> np.ndarray:
     """Get the coordinates of the corners of an array of rotated boxes.
     Args:
-        xywhr (np.ndarray): n x [xc, yc, w, h, rad, ...] array with rotated boxes representation.
+        xywhr (np.ndarray): n x [xc, yc, w, h, rad, ...] array with rotated-boxes representation.
     Raises:
         ValueError: On input shape not like (n, 5+).
     Returns:
-        np.ndarray: n x [x1, y1, x2, y2, x3, y3, x4, y4] with the corners coords of the box.
+        np.ndarray: n x [x1, y1, x2, y2, x3, y3, x4, y4] with the corners representation.
     """
     if not isinstance(xywhr, np.ndarray):
-        msg: str = f'xywhr must be a np.ndarrya, but got {type(xywhr)}.'
+        msg: str = f'xywhr must be a np.ndarray, but got {type(xywhr)}.'
         vimi_logger.error(msg)
         raise ValueError(msg)
     shape = xywhr.shape

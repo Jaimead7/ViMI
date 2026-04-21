@@ -28,7 +28,7 @@ import numpy as np
 from typing_extensions import Self, TypedDict
 
 from .plot import PALLETTE, Color, plot_label, plot_polygon
-from .utils.boxes import xywhr2xyxyxyxy
+from .utils.boxes import norm_coords, xywhr2xyxyxyxy, xyxy2xywh
 
 
 def _parse_np_str(array: np.ndarray) -> str:
@@ -108,15 +108,15 @@ class Boxes(ResultDataWrapper):
 
     @cached_property
     def xywh(self) -> np.ndarray:
-        return self.xyxy2xywh(self.xyxy)
+        return xyxy2xywh(self.xyxy)
 
     @cached_property
     def xyxyn(self) -> np.ndarray:
-        return self.norm_coords(self.xyxy, self.orig_shape)
+        return norm_coords(self.xyxy, self.orig_shape)
 
     @cached_property
     def xywhn(self) -> np.ndarray:
-        return self.norm_coords(self.xywh, self.orig_shape)
+        return norm_coords(self.xywh, self.orig_shape)
 
     @cached_property
     def vertex(self) -> np.ndarray:
@@ -135,23 +135,6 @@ class Boxes(ResultDataWrapper):
             np.minimum(x1, x2),
             np.maximum(y1, y2)
         ])
-
-    @staticmethod
-    def xyxy2xywh(xyxy: np.ndarray) -> np.ndarray:
-        wh = xyxy[:, 2:] - xyxy[:, :2]
-        xy = xyxy[:, :2] + wh / 2
-        return np.concatenate((xy, wh), axis=1)
-
-    @staticmethod
-    def xywh2xyxy(xywh: np.ndarray) -> np.ndarray:
-        x0y0 = xywh[:, :2] - xywh[:, 2:] / 2
-        x1y1 = x0y0 + xywh[:, 2:]
-        return np.concatenate((x0y0, x1y1), axis=1)
-
-    @staticmethod
-    def norm_coords(coords: np.ndarray, img_size: tuple[int, int]) -> np.ndarray:
-        norm_array: np.ndarray = np.array(img_size + img_size)
-        return coords / norm_array
 
     def plot(
         self,
