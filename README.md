@@ -66,7 +66,7 @@ cv2.destroyAllWindows()
 | ------------ | :------: | :---------: |
 | classify     | ✅ | ❌ |
 | detect       | ✅ | ❌ |
-| obb          | ❌ | ❌ |
+| obb          | ✅ | ❌ |
 | pose         | ❌ | ❌ |
 | segmentation | ❌ | ❌ |
 
