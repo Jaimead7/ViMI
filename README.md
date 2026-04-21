@@ -1,9 +1,10 @@
-# ViMI - *Vision Models interface*
-<center>
-
-[![License](https://img.shields.io/static/v1.svg?label=LICENSE&message=MIT&color=2dba4e&colorA=2b3137)](https://github.com/Jaimead7/ViMI/blob/master/LICENSE)
-[![PyPI Latest Release](https://img.shields.io/pypi/v/jaimead7-vimi.svg?color=2dba4e)](https://pypi.org/project/jaimead7-vimi/)  
-</center>  
+<div align="center">
+    <h1 style= "margin 0px; padding: 0px;">VIMI - <i>Vision Models Interface</i></h1>
+    <hr style="width: 100%; height: 1px; margin: 15px;">
+    <a href="https://github.com/Jaimead7/ViMI/actions/workflows/py-tests.yml"><img src="https://github.com/Jaimead7/ViMI/actions/workflows/py-tests.yml/badge.svg"></a>
+    <a href="https://github.com/Jaimead7/ViMI/blob/master/LICENSE"><img src="https://img.shields.io/static/v1.svg?label=LICENSE&message=MIT&color=2dba4e&colorA=2b3137"></a>
+    <a href="https://pypi.org/project/jaimead7-vimi/"><img src="https://img.shields.io/pypi/v/jaimead7-vimi.svg?color=2b3137"></a>
+</div> 
 
 Interface for AI vision models.  
 
