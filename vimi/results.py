@@ -432,9 +432,13 @@ class OBB(ResultDataWrapper):
     @property
     @lru_cache(maxsize=2)
     def xyxy(self) -> np.ndarray:
-        x: np.ndarray = self.xyxyxyxy[..., 0]
-        y: np.ndarray = self.xyxyxyxy[..., 1]
-        return np.stack([x.min(1), y.min(1), x.max(1), y.max(1)], -1)
+        x: np.ndarray = self.xyxyxyxy[:, [0, 2, 4, 6]]
+        y: np.ndarray = self.xyxyxyxy[:, [1, 3, 5, 7]]
+        x_min: np.ndarray = np.min(x, axis=1, keepdims=True)
+        x_max: np.ndarray = np.max(x, axis=1, keepdims=True)
+        y_min: np.ndarray = np.min(y, axis=1, keepdims=True)
+        y_max: np.ndarray = np.max(y, axis=1, keepdims=True)
+        return np.hstack([x_min, y_min, x_max, y_max])
 
     def plot(
         self,
