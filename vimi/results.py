@@ -27,6 +27,7 @@ import numpy as np
 from typing_extensions import Self, TypedDict
 
 from .plot import PALLETTE, Color, plot_label, plot_polygon
+from .utils.boxes import xywhr2xyxyxyxy
 
 
 def _parse_np_str(array: np.ndarray) -> str:
@@ -418,7 +419,7 @@ class OBB(ResultDataWrapper):
     @property
     @lru_cache(maxsize=2)
     def xyxyxyxy(self) -> np.ndarray:
-        return OBB.xywhr2xyxyxyxy(self.xywhr)
+        return xywhr2xyxyxyxy(self.xywhr)
 
     @property
     @lru_cache(maxsize=2)
@@ -434,26 +435,6 @@ class OBB(ResultDataWrapper):
         x: np.ndarray = self.xyxyxyxy[..., 0]
         y: np.ndarray = self.xyxyxyxy[..., 1]
         return np.stack([x.min(1), y.min(1), x.max(1), y.max(1)], -1)
-
-    @staticmethod
-    def xywhr2xyxyxyxy(xywhr: np.ndarray) -> np.ndarray:
-        ctr: np.ndarray = xywhr[..., :2]
-        w: float
-        h: float
-        angle: float
-        w, h, angle = (float(xywhr[..., i : i + 1]) for i in range(2, 5))
-        cos_value: float
-        sin_value: float
-        cos_value, sin_value = np.cos(angle), np.sin(angle)
-        vec1: list[float] = [w / 2 * cos_value, w / 2 * sin_value]
-        vec2: list[float] = [-h / 2 * sin_value, h / 2 * cos_value]
-        vec1_array: np.ndarray = np.concatenate(vec1, -1)
-        vec2_array: np.ndarray = np.concatenate(vec2, -1)
-        pt1 = ctr + vec1_array + vec2
-        pt2 = ctr + vec1_array - vec2_array
-        pt3 = ctr - vec1_array - vec2_array
-        pt4 = ctr - vec1_array + vec2_array
-        return np.stack([pt1, pt2, pt3, pt4], -2)
 
     def plot(
         self,
