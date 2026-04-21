@@ -19,8 +19,18 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+import numpy as np
 from shapely.geometry import Polygon
 
+from ..logs import vimi_logger
+
+
+def poly_from_xyxyxyxy(box: np.ndarray) -> Polygon:
+    if box.shape != (8,):
+        msg: str = f'box shape must be (8,), but got {box.shape}.'
+        vimi_logger.error(msg)
+        raise ValueError(msg)
+    return Polygon(box.reshape(4, 2))
 
 def iou(first: Polygon, second: Polygon, threshold: float) -> bool:
     if not first.intersects(second):
