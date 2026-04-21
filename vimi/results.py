@@ -20,12 +20,14 @@
 
 
 from functools import lru_cache
+from math import degrees
 from typing import Any, Optional
 
 import numpy as np
 from typing_extensions import Self, TypedDict
 
 from .plot import PALLETTE, Color, plot_label, plot_polygon
+from .utils.boxes import xywhr2xyxyxyxy
 
 
 def _parse_np_str(array: np.ndarray) -> str:
@@ -366,16 +368,77 @@ class Keypoints(ResultDataWrapper):
 
 
 class OBB(ResultDataWrapper):
-    #TODO
     def __init__(
         self,
-        obb: np.ndarray,  # 
+        obb: np.ndarray,  # [xc, yc, w, h, rad, conf, id] x n
         orig_shape: tuple[int, int]  # (h, w)
     ) -> None:
-        if obb.ndim == 2:
+        if obb.ndim == 1:
             obb = obb[None, :]
         assert obb.ndim == 2
+        assert obb.shape[-1] == 7
         super().__init__(data= obb, orig_shape= orig_shape)
+
+    def __repr__(self) -> str:
+        result: str = 'Boxes object:\n'
+        result += f'cls: {self.cls}\n'
+        result += f'conf: {self.conf}\n'
+        result += f'data: {_parse_np_str(self.data)}\n'
+        result += f'orig_shape: {self.orig_shape}\n'
+        result += f'xywhr: {_parse_np_str(self.xywhr)}\n'
+        result += f'xyxyxyxy: {_parse_np_str(self.xyxyxyxy)}\n'
+        result += f'xyxyxyxyn: {_parse_np_str(self.xyxyxyxyn)}\n'
+        result += f'xyxy: {_parse_np_str(self.xyxy)}\n'
+        return result
+
+    @property
+    @lru_cache(maxsize=2)
+    def xywhr(self) -> np.ndarray:
+        return self.data[:, :5]
+
+    @property
+    @lru_cache(maxsize=2)
+    def conf(self) -> np.ndarray:
+        return self.data[:, -2]
+
+    @property
+    @lru_cache(maxsize=2)
+    def cls(self) -> np.ndarray:
+        return self.data[:, -1]
+
+    @property
+    @lru_cache(maxsize=2)
+    def r(self) -> float:
+        return self.data[4]
+
+    @property
+    @lru_cache(maxsize=2)
+    def r_deg(self) -> float:
+        return degrees(self.r)
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxyxyxy(self) -> np.ndarray:
+        return xywhr2xyxyxyxy(self.xywhr)
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxyxyxyn(self) -> np.ndarray:
+        xyxyxyxyn: np.ndarray = self.xyxyxyxy.copy()
+        xyxyxyxyn[..., 0] /= self.orig_shape[1]
+        xyxyxyxyn[..., 1] /= self.orig_shape[0]
+        return xyxyxyxyn
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxy(self) -> np.ndarray:
+        x: np.ndarray = self.xyxyxyxy[:, [0, 2, 4, 6]]
+        y: np.ndarray = self.xyxyxyxy[:, [1, 3, 5, 7]]
+        x_min: np.ndarray = np.min(x, axis=1, keepdims=True)
+        x_max: np.ndarray = np.max(x, axis=1, keepdims=True)
+        y_min: np.ndarray = np.min(y, axis=1, keepdims=True)
+        y_max: np.ndarray = np.max(y, axis=1, keepdims=True)
+        return np.hstack([x_min, y_min, x_max, y_max])
 
     def plot(
         self,
@@ -402,7 +465,30 @@ class OBB(ResultDataWrapper):
         *args,
         **kwargs
     ) -> np.ndarray:
-        ...
+        if not(boxes or labels or conf):
+            return img
+        for i in range(len(self.data)):
+            if boxes:
+                plot_polygon(
+                    img= img,
+                    vertex= self.xyxyxyxy[i],
+                    cls= int(self.cls[i]),
+                    line_width= line_width,
+                    pallette= pallette
+                )
+            if labels or conf:
+                plot_label(
+                    img= img,
+                    p0= self.xyxyxyxy[i][:2],
+                    cls= int(self.cls[i]),
+                    conf_val= self.conf[i],
+                    names= names,
+                    conf= conf,
+                    labels= labels,
+                    font_size= font_size,
+                    line_width= line_width,
+                    pallette= pallette
+                )
         return img
 
 
@@ -416,7 +502,7 @@ class Results:
         masks: Optional[np.ndarray] = None,  # Segmentetion masks: 
         probs: Optional[np.ndarray] = None,  # Classification probs: [prob1, prob2, prob3, ...]
         keypoints: Optional[np.ndarray] = None,  # Keypoints: 
-        obb: Optional[np.ndarray] = None,  # Oriented boxes: [] x n
+        obb: Optional[np.ndarray] = None,  # Oriented boxes: [xc, yc, w, h, rad, conf, id] x n
         speed: Optional[SpeedDict] = None
     ) -> None:
         self.orig_img: np.ndarray = orig_img

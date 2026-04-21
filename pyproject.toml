@@ -32,7 +32,8 @@
         "ncnn",
         "pydantic",
         "pyyaml",
-        "typing_extensions"
+        "typing_extensions",
+        "shapely"
     ]
     requires-python = ">=3.10, <3.15"
 

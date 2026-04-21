@@ -68,7 +68,7 @@ def plot_polygon(
     pallette: tuple[Color, ...] = PALLETTE
 ) -> None:
     if line_width is None:
-        line_width = 2
+        line_width = float(np.min(img.shape[:2])) * 0.004
     color: Color = get_color(cls, pallette)
     if len(vertex) % 2 != 0:
         msg: str = f'A vertex array should contain an even number of elements. Got {len(vertex)}. Polygon won\'t be plotted.'
@@ -97,9 +97,9 @@ def plot_label(
 ) -> None:
     # Constants
     if font_size is None:
-        font_size = 0.5
+        font_size = float(np.min(img.shape[:2])) * 0.001
     if line_width is None:
-        line_width = 2
+        line_width = float(np.min(img.shape[:2])) * 0.004
     color: Color = get_color(cls, pallette)
     font: int = cv2.FONT_HERSHEY_SIMPLEX
     font_color: tuple = get_font_color(color)
@@ -171,6 +171,6 @@ def plot_label(
         fontFace= font,
         fontScale= font_size,
         color= font_color,
-        thickness= 1,
+        thickness= int(float(np.min(img.shape[:2])) * 0.002),
         lineType= cv2.LINE_AA
     )
