@@ -98,7 +98,7 @@ def dota_imgs() -> dict[Path, dict]:
     imgs_path: Path = IMGS_PATH / 'dota'
     imgs: dict[Path, dict] = {
         imgs_path / 'airport.png': {
-            'result': ['plain', 'plain', 'plain'],
+            'result': ['plane', 'plane', 'plane'],
         },
         imgs_path / 'roundabout.png': {
             'result': ['roundabout', 'small vehicle'],
