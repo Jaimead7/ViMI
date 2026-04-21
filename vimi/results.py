@@ -168,20 +168,20 @@ class Boxes(ResultDataWrapper):
     ) -> np.ndarray:
         if not(boxes or labels or conf):
             return img
-        for i in range(self.data):
+        for i in range(len(self.data)):
             if boxes:
                 plot_polygon(
                     img= img,
                     vertex= self.vertex[i],
-                    cls= self.cls[i],
+                    cls= int(self.cls[i]),
                     line_width= line_width,
                     pallette= pallette
                 )
             if labels or conf:
                 plot_label(
                     img= img,
-                    p0= self.xyxy[:2],
-                    cls= self.cls[i],
+                    p0= self.xyxy[i][:2],
+                    cls= int(self.cls[i]),
                     conf_val= self.conf[i],
                     names= names,
                     conf= conf,
