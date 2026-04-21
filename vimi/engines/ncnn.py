@@ -191,18 +191,19 @@ class OBBPostProcessor(Postprocessor):
         model_out: ncnn.Mat
     ) -> np.ndarray:
         model_out_array: np.ndarray = np.array(model_out).T
-        xywhr: np.ndarray = model_out_array[:, :5]
-        all_conf: np.ndarray = model_out_array[:, 5:]
+        xywh: np.ndarray = model_out_array[:, :4]
+        r: np.ndarray = model_out_array[:, -1, np.newaxis]
+        all_conf: np.ndarray = model_out_array[:, 4:-1]
         max_conf: np.ndarray = np.max(all_conf, axis= 1, keepdims= True)
         max_index: np.ndarray = np.argmax(all_conf, axis= 1, keepdims= True)
-        return np.hstack((xywhr, max_conf, max_index))
+        return np.hstack((xywh, r, max_conf, max_index))
 
     @classmethod
     def filter_boxes(
         cls,
-        boxes: np.ndarray
+        boxes: np.ndarray  # [xc, yc, w, h, rad, conf, id] x n
     ) -> np.ndarray:
-        mask = boxes[:, 4] > cls.GLOBAL_CONF_THRESHOLD
+        mask = boxes[:, -2] > cls.GLOBAL_CONF_THRESHOLD
         pot_boxes: np.ndarray = boxes[mask]
         filter_boxes: np.ndarray = cls.nms(pot_boxes)
         return filter_boxes
