@@ -61,7 +61,7 @@ cv2.destroyAllWindows()
 ```
 
 ## Available model interfaces
-### [YOLO11](https://docs.ultralytics.com/es/models/yolo11/) models:
+### [YOLO](https://docs.ultralytics.com/es/models/yolo26/) models:
 | *type*       | **ncnn** | **pyTorch** |
 | ------------ | :------: | :---------: |
 | classify     | ✅ | ❌ |
