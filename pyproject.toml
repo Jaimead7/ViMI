@@ -40,7 +40,7 @@
     [project.optional-dependencies]
         dev = [
             "pytest",
-            "wheel",
+            "build",
             "twine"
         ]
 
