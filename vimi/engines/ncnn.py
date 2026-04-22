@@ -213,8 +213,6 @@ class OBBPostProcessor(Postprocessor):
         cls,
         boxes: np.ndarray
     ) -> np.ndarray:
-        if len(boxes) == 0:
-            return np.array([])
         scores: np.ndarray = boxes[:, -2]
         order: np.ndarray = scores.argsort()[::-1]
         xyxyxyxy: np.ndarray = xywhr2xyxyxyxy(boxes)

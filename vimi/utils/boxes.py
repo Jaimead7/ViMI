@@ -65,6 +65,8 @@ def xywh2xyxy(xywh: np.ndarray) -> np.ndarray:
         msg: str = f'xywh shape must be (n, 4+), but got {shape}.'
         vimi_logger.error(msg)
         raise ValueError(msg)
+    if shape[0] == 0:
+        return np.empty((0, 4))
     extra_cols: np.ndarray | None = xywh[..., 4:] if shape[1] > 4 else None
     x0y0 = xywh[:, :2] - xywh[:, 2:] / 2
     x1y1 = x0y0 + xywh[:, 2:]
@@ -91,6 +93,8 @@ def xyxy2xywh(xyxy: np.ndarray) -> np.ndarray:
         msg: str = f'xyxy shape must be (n, 4+), but got {shape}.'
         vimi_logger.error(msg)
         raise ValueError(msg)
+    if shape[0] == 0:
+        return np.empty((0, 4))
     extra_cols: np.ndarray | None = xyxy[..., 4:] if shape[1] > 4 else None
     wh = xyxy[:, 2:] - xyxy[:, :2]
     xy = xyxy[:, :2] + wh / 2
@@ -117,6 +121,8 @@ def xywhr2xyxyxyxy(xywhr: np.ndarray) -> np.ndarray:
         msg: str = f'xywhr shape must be (n, 5+), but got {shape}.'
         vimi_logger.error(msg)
         raise ValueError(msg)
+    if shape[0] == 0:
+        return np.empty((0, 8))
     extra_cols: np.ndarray | None = xywhr[..., 5:] if shape[1] > 5 else None
     ctr: np.ndarray = xywhr[..., :2]
     w: np.ndarray
