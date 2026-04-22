@@ -32,7 +32,7 @@ import numpy as np
 from ..filesystem import NCNNModelFolder
 from ..filters import CoordsTransformer, bgr2rgb, gray2bgr, redim
 from ..logs import vimi_logger
-from ..results import Boxes, Results, SpeedDict
+from ..results import Results, SpeedDict
 from ..utils.boxes import iou, xywh2xyxy, xywhr2xyxyxyxy, xyxyxyxy2poly
 from .model_engine import EnginesReg
 
@@ -146,7 +146,7 @@ class DetectPostProcessor(Postprocessor):
         y0: np.ndarray = boxes[:, 1]
         x1: np.ndarray = boxes[:, 2]
         y1: np.ndarray = boxes[:, 3]
-        scores: np.ndarray = boxes[:, 4]
+        scores: np.ndarray = boxes[:, -2]
         areas: np.ndarray = (x1 - x0) * (y1 - y0)
         order: np.ndarray = scores.argsort()[::-1]
         keep: list[int] = []
