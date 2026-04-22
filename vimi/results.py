@@ -484,7 +484,7 @@ class Results:
         result += f'boxes: ' + str(self.boxes).replace('\n', ' ') + '\n'
         result += f'masks: ' + str(self.masks).replace('\n', ' ') + '\n'
         result += f'keypoints: ' + str(self.keypoints).replace('\n', ' ') + '\n'
-        result += f'obb: {self.obb}\n'
+        result += f'obb: ' + str(self.obb).replace('\n', ' ') + '\n'
         result += f'speed: {self.speed}\n'
         return result
 
