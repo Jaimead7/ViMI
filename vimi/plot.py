@@ -27,7 +27,7 @@ from .logs import vimi_logger
 Color = tuple[int, int, int]
 
 
-PALLETTE: tuple[Color, ...]= (
+PALLETTE: tuple[Color, ...] = (
     (79, 68, 255),
     (68, 243, 0),
     (255, 42, 4),
