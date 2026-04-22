@@ -1,9 +1,10 @@
-# ViMI - *Vision Models interface*
-<center>
-
-[![License](https://img.shields.io/static/v1.svg?label=LICENSE&message=MIT&color=2dba4e&colorA=2b3137)](https://github.com/Jaimead7/ViMI/blob/master/LICENSE)
-[![PyPI Latest Release](https://img.shields.io/pypi/v/jaimead7-vimi.svg?color=2dba4e)](https://pypi.org/project/jaimead7-vimi/)  
-</center>  
+<div align="center">
+    <h1 style= "margin 0px; padding: 0px;">VIMI - <i>Vision Models Interface</i></h1>
+    <hr style="width: 100%; height: 1px; margin: 15px;">
+    <a href="https://github.com/Jaimead7/ViMI/actions/workflows/py-tests.yml"><img src="https://github.com/Jaimead7/ViMI/actions/workflows/py-tests.yml/badge.svg"></a>
+    <a href="https://github.com/Jaimead7/ViMI/blob/master/LICENSE"><img src="https://img.shields.io/static/v1.svg?label=LICENSE&message=MIT&color=2dba4e&colorA=2b3137"></a>
+    <a href="https://pypi.org/project/jaimead7-vimi/"><img src="https://img.shields.io/pypi/v/jaimead7-vimi.svg?color=2b3137"></a>
+</div> 
 
 Interface for AI vision models.  
 
@@ -26,7 +27,7 @@ py -m pip install jaimead7-vimi
 ```
 
 ## Usage
-Create a models folder with a valid structure. You can find examples in [./test/models/](./test/models/).
+Create a model folder with a valid structure. You can find examples in [./test/models/](./test/models/).
 
 ```python
 from pathlib import Path
@@ -47,15 +48,16 @@ IMGS_PATHS: list[Path] = [
 
 model: Optional[ModelEngine] = EnginesReg.get_model(MODEL_PATH)
 if model is None:
-    raise SystemError(f'Cant\'t open the model "{MODEL_PATH}".')
+    raise RuntimeError(f'Cant\'t open the model "{MODEL_PATH}".')
 
 results: list[Results] = model(IMGS_PATHS)
 
-if len(results) >= 0:
-    for result, img in zip(results, IMGS_PATHS):
-        cv2.imshow(f'{img.name}', result.plot())
-    _: int = cv2.waitKey(0)
-    cv2.destroyAllWindows()
+if len(results) != len(IMGS_PATHS):
+    raise RuntimeError(f'Error processing images: Expected {len(IMGS_PATHS)} Results, got {len(results)}.')
+for result, img in zip(results, IMGS_PATHS):
+    cv2.imshow(f'{img.name}', result.plot())
+_: int = cv2.waitKey(0)
+cv2.destroyAllWindows()
 ```
 
 ## Available model interfaces
@@ -64,7 +66,7 @@ if len(results) >= 0:
 | ------------ | :------: | :---------: |
 | classify     | ✅ | ❌ |
 | detect       | ✅ | ❌ |
-| obb          | ❌ | ❌ |
+| obb          | ✅ | ❌ |
 | pose         | ❌ | ❌ |
 | segmentation | ❌ | ❌ |
 

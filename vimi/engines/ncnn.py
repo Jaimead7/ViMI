@@ -29,11 +29,12 @@ import cv2
 import ncnn
 import numpy as np
 
-from ..filesystem import ModelFolder, NCNNModelFolder
+from ..filesystem import NCNNModelFolder
 from ..filters import CoordsTransformer, bgr2rgb, gray2bgr, redim
 from ..logs import vimi_logger
-from ..results import Boxes, Results, SpeedDict
-from .model_engine import EnginesReg, ModelEngine
+from ..results import Results, SpeedDict
+from ..utils.boxes import iou, xywh2xyxy, xywhr2xyxyxyxy, xyxyxyxy2poly
+from .model_engine import EnginesReg
 
 
 class Postprocessor:
@@ -120,7 +121,7 @@ class DetectPostProcessor(Postprocessor):
     ) -> np.ndarray:
         model_out_array: np.ndarray = np.array(model_out).T
         xywh: np.ndarray = model_out_array[:, :4]
-        xyxy: np.ndarray = Boxes.xywh2xyxy(xywh)
+        xyxy: np.ndarray = xywh2xyxy(xywh)
         all_conf: np.ndarray = model_out_array[:, 4:]
         max_conf: np.ndarray = np.max(all_conf, axis= 1, keepdims= True)
         max_index: np.ndarray = np.argmax(all_conf, axis= 1, keepdims= True)
@@ -145,7 +146,7 @@ class DetectPostProcessor(Postprocessor):
         y0: np.ndarray = boxes[:, 1]
         x1: np.ndarray = boxes[:, 2]
         y1: np.ndarray = boxes[:, 3]
-        scores: np.ndarray = boxes[:, 4]
+        scores: np.ndarray = boxes[:, -2]
         areas: np.ndarray = (x1 - x0) * (y1 - y0)
         order: np.ndarray = scores.argsort()[::-1]
         keep: list[int] = []
@@ -162,6 +163,69 @@ class DetectPostProcessor(Postprocessor):
             union: np.ndarray = areas[i] + areas[order[1:]] - intersection
             iou: np.ndarray = intersection / union
             inds = np.where(iou <= cls.IOU_THRESHOLD)[0]
+            order = order[inds + 1]
+        return boxes[keep]
+
+
+@PostprocessorsReg.register('OBB')
+class OBBPostProcessor(Postprocessor):
+    GLOBAL_CONF_THRESHOLD: float = 0.25
+    IOU_THRESHOLD: float = 0.75
+
+    def __call__(
+        self,
+        result: Results,
+        ncc_out: ncnn.Mat,
+        transformers: Sequence[CoordsTransformer]
+    ) -> Results:
+        out_array: np.ndarray = self.parse_ncnn_out(ncc_out)
+        boxes: np.ndarray = self.filter_boxes(out_array)
+        for transformer in transformers[::-1]:
+            boxes = transformer.xywh2org(boxes)
+        result.set_obb(boxes)
+        return result
+
+    @classmethod
+    def parse_ncnn_out(
+        cls,
+        model_out: ncnn.Mat
+    ) -> np.ndarray:
+        model_out_array: np.ndarray = np.array(model_out).T
+        xywh: np.ndarray = model_out_array[:, :4]
+        r: np.ndarray = model_out_array[:, -1, np.newaxis]
+        all_conf: np.ndarray = model_out_array[:, 4:-1]
+        max_conf: np.ndarray = np.max(all_conf, axis= 1, keepdims= True)
+        max_index: np.ndarray = np.argmax(all_conf, axis= 1, keepdims= True)
+        return np.hstack((xywh, r, max_conf, max_index))
+
+    @classmethod
+    def filter_boxes(
+        cls,
+        boxes: np.ndarray  # [xc, yc, w, h, rad, conf, id] x n
+    ) -> np.ndarray:
+        mask = boxes[:, -2] > cls.GLOBAL_CONF_THRESHOLD
+        pot_boxes: np.ndarray = boxes[mask]
+        filter_boxes: np.ndarray = cls.nms(pot_boxes)
+        return filter_boxes
+
+    @classmethod
+    def nms(
+        cls,
+        boxes: np.ndarray
+    ) -> np.ndarray:
+        scores: np.ndarray = boxes[:, -2]
+        order: np.ndarray = scores.argsort()[::-1]
+        xyxyxyxy: np.ndarray = xywhr2xyxyxyxy(boxes)
+        poly_array: np.ndarray = np.array([xyxyxyxy2poly(coords) for coords in xyxyxyxy])
+        keep: list[int] = []
+        while order.size > 0:
+            i: int = order[0]
+            keep.append(i)
+            iou_array: np.ndarray = np.array([
+                iou(poly_array[i], other)
+                for other in poly_array[order[1:]]
+            ])
+            inds = np.where(iou_array <= cls.IOU_THRESHOLD)[0]
             order = order[inds + 1]
         return boxes[keep]
 

@@ -57,6 +57,22 @@ class CoordsTransformer:
         values[:,3] = (values[:, 3] - self.offsetY) * self.scaleY
         return values
 
+    def xywh2org(self, xywh: np.ndarray) -> np.ndarray:
+        values: np.ndarray = xywh.copy()
+        values[:,0] = (values[:, 0] / self.scaleX) + self.offsetX
+        values[:,1] = (values[:, 1] / self.scaleY) + self.offsetY
+        values[:,2] = values[:, 2] / self.scaleX
+        values[:,3] = values[:, 3] / self.scaleY
+        return values
+
+    def org2xywh(self, xywh: np.ndarray) -> np.ndarray:
+        values: np.ndarray = xywh.copy()
+        values[:,0] = (values[:, 0] - self.offsetX) * self.scaleX
+        values[:,1] = (values[:, 1] - self.offsetY) * self.scaleY
+        values[:,2] = values[:, 2] * self.scaleX
+        values[:,3] = values[:, 3] * self.scaleY
+        return values
+
 
 class ImageFilter(Protocol):
     def __call__(

@@ -4,7 +4,7 @@
 
 [project]
     name = "jaimead7-vimi"
-    version = "0.0.1"
+    version = "0.0.2"
     description = "Interface for AI vision models."
     authors = [
         {name = "Jaime Álvarez", email = "alvarez.diaz.jaime1@gmail.com"},
@@ -26,19 +26,21 @@
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ]
     dependencies = [
         "ncnn",
         "pydantic",
         "pyyaml",
-        "typing_extensions"
+        "typing_extensions",
+        "shapely"
     ]
-    requires-python = ">=3.10, <3.14"
+    requires-python = ">=3.10, <3.15"
 
     [project.optional-dependencies]
         dev = [
             "pytest",
-            "wheel",
+            "build",
             "twine"
         ]
 
