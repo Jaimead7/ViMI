@@ -215,26 +215,21 @@ class OBBPostProcessor(Postprocessor):
     ) -> np.ndarray:
         if len(boxes) == 0:
             return np.array([])
-        sorted_arr: np.ndarray = boxes[boxes[:, -2].argsort()[::-1]]
-        xyxyxyxy: np.ndarray = xywhr2xyxyxyxy(sorted_arr)
+        scores: np.ndarray = boxes[:, -2]
+        order: np.ndarray = scores.argsort()[::-1]
+        xyxyxyxy: np.ndarray = xywhr2xyxyxyxy(boxes)
+        poly_array: np.ndarray = np.array([xyxyxyxy2poly(coords) for coords in xyxyxyxy])
         keep: list[int] = []
-        rm: set[int] = set()
-        for i in range(len(sorted_arr)):
-            if i in rm:
-                continue
+        while order.size > 0:
+            i: int = order[0]
             keep.append(i)
-            j: int = i + 1
-            for j in range(i+1, len(sorted_arr)):
-                if j in rm:
-                    continue
-                iou_res: float = iou(
-                    xyxyxyxy2poly(xyxyxyxy[i]),
-                    xyxyxyxy2poly(xyxyxyxy[j])
-                )
-                if iou_res > cls.IOU_THRESHOLD:
-                    rm.add(j)
-        filter_arr: np.ndarray = sorted_arr[keep]
-        return filter_arr
+            iou_array: np.ndarray = np.array([
+                iou(poly_array[i], other)
+                for other in poly_array[order[1:]]
+            ])
+            inds = np.where(iou_array <= cls.IOU_THRESHOLD)[0]
+            order = order[inds + 1]
+        return boxes[keep]
 
 
 @EnginesReg.register('NCNN')
