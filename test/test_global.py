@@ -26,8 +26,7 @@ import cv2
 import numpy as np
 from pytest import fixture
 
-from vimi.engines import EnginesReg, ModelEngine
-from vimi.results import Results
+from vimi import EnginesReg, ModelEngine, Results
 
 MODELS_PATH: Path = Path(__file__).absolute().parent / 'models'
 IMGS_PATH: Path = Path(__file__).absolute().parent / 'imgs'

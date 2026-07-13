@@ -24,8 +24,7 @@ from typing import Optional
 
 import cv2
 
-from vimi.engines import EnginesReg, ModelEngine
-from vimi.results import Results
+from vimi import EnginesReg, ModelEngine, Results
 
 
 def main() -> None:
