@@ -26,6 +26,7 @@ from typing import Any, ClassVar, Optional, Protocol
 import numpy as np
 
 from ..filesystem import ModelFolder
+from ..logs import vimi_logger
 from ..results import Results
 
 
@@ -65,20 +66,33 @@ class EnginesReg:
         model: Optional[ModelEngine] = cls._engines.get(str(model_path), None)
         if model is not None:
             return model
-        model_folder: ModelFolder = ModelFolder(path= model_path)
-        engine_cls: Optional[type[ModelEngine]] = cls._engine_cls.get(
-            model_folder.model_type,
-            None
-        )
-        if engine_cls is None:
-            return None
-        model = engine_cls(folder_path= model_path)
-        cls._engines[str(model_path)] = model
-        return model
+        try:
+            model_folder: ModelFolder = ModelFolder(path= model_path)
+            engine_cls: Optional[type[ModelEngine]] = cls._engine_cls.get(
+                model_folder.model_type,
+                None
+            )
+            if engine_cls is None:
+                return None
+            model = engine_cls(folder_path= model_path)
+            cls._engines[str(model_path)] = model
+            vimi_logger.debug(f'Model "{model_path}" loaded.')
+            return model
+        except Exception:
+            pass
+        return None
 
     @classmethod
     def models_list(cls) -> list[str]:
         return sorted(cls._engines.keys())
+
+    @classmethod
+    def clear_model(cls, model_path: Path) -> None:
+        try:
+            del cls._engines[str(model_path)]
+            vimi_logger.debug(f'Model "{model_path}" unloaded.')
+        except KeyError:
+            pass
 
     @classmethod
     def clear_models(cls) -> None:
