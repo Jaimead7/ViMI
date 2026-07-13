@@ -247,7 +247,7 @@ class Probs(ResultDataWrapper):
         return float(self.data[self.top1])
 
     @cached_property
-    def top4conf(self) -> np.ndarray:
+    def top5conf(self) -> np.ndarray:
         return self.data[self.top5]
 
     def plot(
