@@ -73,13 +73,14 @@ class EnginesReg:
                 None
             )
             if engine_cls is None:
+                vimi_logger.error(f'Engine type "{model_folder.model_type}" not found.')
                 return None
             model = engine_cls(folder_path= model_path)
             cls._engines[str(model_path)] = model
             vimi_logger.debug(f'Model "{model_path}" loaded.')
             return model
-        except Exception:
-            pass
+        except Exception as e:
+            vimi_logger.error(f'Unexpected error loading model "{model_path}". {e}')
         return None
 
     @classmethod
