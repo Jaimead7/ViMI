@@ -48,7 +48,7 @@ class ModelEngine(Protocol):
 
 class EnginesReg:
     _engine_cls: ClassVar[dict[str, type[ModelEngine]]] = {}
-    _engines: ClassVar[dict[str, ModelEngine]] = {}
+    _engines: ClassVar[dict[Path, ModelEngine]] = {}
 
     @classmethod
     def register(cls, name: str) -> Callable[..., type[ModelEngine]]:
@@ -63,7 +63,7 @@ class EnginesReg:
 
     @classmethod
     def get_model(cls, model_path: Path) -> Optional[ModelEngine]:
-        model: Optional[ModelEngine] = cls._engines.get(str(model_path), None)
+        model: Optional[ModelEngine] = cls._engines.get(model_path, None)
         if model is not None:
             return model
         try:
@@ -76,7 +76,7 @@ class EnginesReg:
                 vimi_logger.error(f'Engine type "{model_folder.model_type}" not found.')
                 return None
             model = engine_cls(folder_path= model_path)
-            cls._engines[str(model_path)] = model
+            cls._engines[model_path] = model
             vimi_logger.debug(f'Model "{model_path}" loaded.')
             return model
         except Exception as e:
@@ -84,13 +84,13 @@ class EnginesReg:
         return None
 
     @classmethod
-    def models_list(cls) -> list[str]:
+    def models_list(cls) -> list[Path]:
         return sorted(cls._engines.keys())
 
     @classmethod
     def clear_model(cls, model_path: Path) -> None:
         try:
-            del cls._engines[str(model_path)]
+            del cls._engines[model_path]
             vimi_logger.debug(f'Model "{model_path}" unloaded.')
         except KeyError:
             pass
