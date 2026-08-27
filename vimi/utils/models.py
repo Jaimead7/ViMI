@@ -20,9 +20,14 @@
 
 
 from pydantic import BaseModel as pyBM
+from pydantic import ConfigDict
 
 
 class BaseModel(pyBM):
     """A wrapper for pydantic.BaseModel"""
+    model_config = ConfigDict(
+        validate_assignment= True
+    )
+    
     def __str__(self) -> str:
         return f'{self.__class__.__name__}({super().__str__()})'
