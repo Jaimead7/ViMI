@@ -26,10 +26,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 import yaml
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import ConfigDict, field_validator
 
 from ..filters import ImageFilter, ImageFiltersReg
 from ..logs import vimi_logger
+from ..utils.models import BaseModel
 
 
 class ModelMetadata(BaseModel):
