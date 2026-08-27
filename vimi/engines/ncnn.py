@@ -23,7 +23,7 @@ from abc import abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, ClassVar, Generator, Optional
+from typing import Any, ClassVar, Generator
 
 import cv2
 import ncnn
@@ -313,7 +313,7 @@ class NCCEngine:
                 yield source
                 continue
             try:
-                img: Optional[np.ndarray] = cv2.imread(str(source))
+                img: np.ndarray | None = cv2.imread(str(source))
                 if img is None:
                     raise ValueError(f'Could not read image from "{str(source)}".')
                 yield img

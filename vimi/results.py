@@ -22,7 +22,7 @@
 import inspect
 from functools import cached_property
 from math import degrees
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from pydantic import Field
@@ -472,12 +472,12 @@ class Results:
         orig_img: np.ndarray,
         path: str,
         names: dict[int, str],
-        boxes: Optional[np.ndarray] = None,  # Detection boxes: [x1, y1, x2, y2, conf, id] x n,
-        masks: Optional[np.ndarray] = None,  # Segmentetion masks: 
-        probs: Optional[np.ndarray] = None,  # Classification probs: [prob1, prob2, prob3, ...]
-        keypoints: Optional[np.ndarray] = None,  # Keypoints: 
-        obb: Optional[np.ndarray] = None,  # Oriented boxes: [xc, yc, w, h, rad, conf, id] x n
-        speed: Optional[SpeedDict] = None
+        boxes: np.ndarray | None = None,  # Detection boxes: [x1, y1, x2, y2, conf, id] x n,
+        masks: np.ndarray | None = None,  # Segmentetion masks: 
+        probs: np.ndarray | None = None,  # Classification probs: [prob1, prob2, prob3, ...]
+        keypoints: np.ndarray | None = None,  # Keypoints: 
+        obb: np.ndarray | None = None,  # Oriented boxes: [xc, yc, w, h, rad, conf, id] x n
+        speed: SpeedDict | np.ndarray | None = None
     ) -> None:
         self.orig_img: np.ndarray = orig_img
         self.orig_shape: tuple[int, int] = orig_img.shape[:2]  # (h, w)
@@ -488,7 +488,12 @@ class Results:
         self.set_probs(probs= probs)
         self.set_keypoints(keypoints= keypoints)
         self.set_obb(obb= obb)
-        self.speed: SpeedDict = speed if speed is not None else SpeedDict()
+        if isinstance(speed, SpeedDict):
+            self.speed: SpeedDict = speed
+        elif isinstance(speed, np.ndarray):
+            self.speed = SpeedDict(*speed)
+        else:
+            self.speed = SpeedDict()
         self._keys = ('boxes', 'masks', 'probs', 'keypoints', 'obb')
 
     def __repr__(self) -> str:
@@ -515,20 +520,20 @@ class Results:
             setattr(r, k, getattr(v, fn)(*args, **kwargs))
         return r
 
-    def set_boxes(self, boxes: Optional[np.ndarray] = None) -> None:
-        self.boxes: Optional[Boxes] = Boxes(boxes= boxes, orig_shape= self.orig_shape) if boxes is not None else None
+    def set_boxes(self, boxes: np.ndarray | None = None) -> None:
+        self.boxes: Boxes | None = Boxes(boxes= boxes, orig_shape= self.orig_shape) if boxes is not None else None
 
-    def set_masks(self, masks: Optional[np.ndarray] = None) -> None:
-        self.masks: Optional[Masks] = Masks(masks= masks, orig_shape= self.orig_shape) if masks is not None else None
+    def set_masks(self, masks: np.ndarray | None = None) -> None:
+        self.masks: Masks | None = Masks(masks= masks, orig_shape= self.orig_shape) if masks is not None else None
 
-    def set_probs(self, probs: Optional[np.ndarray] = None) -> None:
-        self.probs: Optional[Probs] = Probs(probs= probs, orig_shape= self.orig_shape) if probs is not None else None
+    def set_probs(self, probs: np.ndarray | None = None) -> None:
+        self.probs: Probs | None = Probs(probs= probs, orig_shape= self.orig_shape) if probs is not None else None
 
-    def set_keypoints(self, keypoints: Optional[np.ndarray] = None) -> None:
-        self.keypoints: Optional[Keypoints] = Keypoints(keypoints= keypoints, orig_shape= self.orig_shape) if keypoints is not None else None
+    def set_keypoints(self, keypoints: np.ndarray | None = None) -> None:
+        self.keypoints: Keypoints | None = Keypoints(keypoints= keypoints, orig_shape= self.orig_shape) if keypoints is not None else None
 
-    def set_obb(self, obb: Optional[np.ndarray] = None) -> None:
-        self.obb: Optional[OBB] = OBB(obb= obb, orig_shape= self.orig_shape) if obb is not None else None
+    def set_obb(self, obb: np.ndarray | None = None) -> None:
+        self.obb: OBB | None = OBB(obb= obb, orig_shape= self.orig_shape) if obb is not None else None
 
     def copy(self) -> Self:
         return self.__class__(
@@ -540,7 +545,7 @@ class Results:
 
     def plot(
         self,
-        img: Optional[np.ndarray] = None,
+        img: np.ndarray | None = None,
         conf: bool = True,
         line_width: float | None = None,
         font_size: float | None = None,

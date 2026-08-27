@@ -23,7 +23,6 @@ import logging
 import platform
 from os import getenv
 from pathlib import Path
-from typing import Optional
 
 
 class Styles:
@@ -86,12 +85,12 @@ class MyLogger:
         self,
         logger_name: str,
         logging_level: int = logging.DEBUG,
-        file_path: Optional[Path | str] = None,
+        file_path: Path | str | None = None,
         save_logs: bool = False,
         enable: bool = True
     ) -> None:
         self.enable: bool = False
-        self._file_handler: Optional[logging.FileHandler] = None
+        self._file_handler: logging.FileHandler | None = None
         self._save_logs: bool = False
         self._logger: logging.Logger = logging.getLogger(logger_name)
         self.level = logging_level
@@ -115,7 +114,7 @@ class MyLogger:
             handler.setLevel(lvl)
 
     @property
-    def parent(self) -> Optional[logging.Logger]:
+    def parent(self) -> logging.Logger | None:
         return self._logger.parent
 
     @property
@@ -136,11 +135,11 @@ class MyLogger:
         self.debug(f'Log saving state: {self.save_logs}')
 
     @property
-    def logs_file_path(self) -> Optional[Path]:
+    def logs_file_path(self) -> Path | None:
         return self._file_path
 
     @logs_file_path.setter
-    def logs_file_path(self, new_path: Optional[Path | str]) -> None:
+    def logs_file_path(self, new_path: Path | str | None) -> None:
         self._remove_file_handler()
         if new_path is not None:
             new_path = Path(new_path)
@@ -148,8 +147,8 @@ class MyLogger:
         self.save_logs = self.save_logs
         self.debug(f'Log file path: {self.logs_file_path}')
 
-    def _create_file_path(self, file_path: Optional[Path] = None) -> None:
-        self._file_path: Optional[Path] = None
+    def _create_file_path(self, file_path: Path | None = None) -> None:
+        self._file_path: Path | None = None
         if file_path is None:
             return
         if file_path.suffix != '.log':
@@ -165,7 +164,7 @@ class MyLogger:
             temp_path = '/tmp'
         self._file_path= Path(getenv(self.PATH_ENV_NAME, temp_path)) / file_path
 
-    def _create_file_handler(self, file_path: Optional[Path] = None) -> None:
+    def _create_file_handler(self, file_path: Path | None = None) -> None:
         self._create_file_path(file_path)
         if self._file_path is None:
             return

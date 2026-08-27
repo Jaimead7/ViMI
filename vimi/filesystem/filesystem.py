@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from pydantic import ConfigDict, field_validator
@@ -36,8 +36,8 @@ from ..utils.models import BaseModel
 class ModelMetadata(BaseModel):
     date: datetime
     model_type: str
-    filters: Optional[list[str]] = None
-    filters_attrs: Optional[dict[str, dict[str, Any]]] = None
+    filters: list[str] | None = None
+    filters_attrs: dict[str, dict[str, Any]] | None = None
     task: str
     names: dict[int, str]
 
@@ -105,8 +105,8 @@ class ModelFolder(BaseModel):
 
     @cached_property
     def filters(self) -> Sequence[tuple[ImageFilter, dict[str, Any]]]:
-        filters_names: Optional[list[str]] = self.metadata.filters
-        filters_attrs: Optional[dict[str, dict[str, Any]]] = self.metadata.filters_attrs
+        filters_names: list[str] | None = self.metadata.filters
+        filters_attrs: dict[str, dict[str, Any]] | None = self.metadata.filters_attrs
         if filters_names is None or filters_attrs is None:
             return tuple()
         return tuple(

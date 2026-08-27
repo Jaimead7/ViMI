@@ -31,7 +31,6 @@ Create a model folder with a valid structure. You can find examples in [./test/m
 
 ```python
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -46,7 +45,7 @@ IMGS_PATHS: list[Path] = [
     Path(Path('./test/imgs/coco/planes.jpg'))
 ]
 
-model: Optional[ModelEngine] = EnginesReg.get_model(MODEL_PATH)
+model: ModelEngine | None = EnginesReg.get_model(MODEL_PATH)
 if model is None:
     raise RuntimeError(f'Cant\'t open the model "{MODEL_PATH}".')
 

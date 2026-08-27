@@ -20,7 +20,6 @@
 
  
 from pathlib import Path
-from typing import Optional
 
 import cv2
 
@@ -41,7 +40,7 @@ def main() -> None:
         }
     }
 
-    model: Optional[ModelEngine] = EnginesReg.get_model(model_path= MODEL_PATH)
+    model: ModelEngine | None = EnginesReg.get_model(model_path= MODEL_PATH)
     if model is None:
         raise SystemError(f'Cant\'t open the model "{MODEL_PATH}".')
 

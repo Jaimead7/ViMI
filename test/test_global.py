@@ -20,7 +20,6 @@
 
 
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -35,7 +34,7 @@ IMGS_PATH: Path = Path(__file__).absolute().parent / 'imgs'
 @fixture
 def class_model() -> ModelEngine:
     model_path: Path = MODELS_PATH / 'ClassModelNCNN'
-    model: Optional[ModelEngine] = EnginesReg.get_model(model_path)
+    model: ModelEngine | None = EnginesReg.get_model(model_path)
     if model is None:
         raise SystemError('Error creating classification model.')
     return model
@@ -43,7 +42,7 @@ def class_model() -> ModelEngine:
 @fixture
 def detect_model() -> ModelEngine:
     model_path: Path = MODELS_PATH / 'DetectModelNCNN'
-    model: Optional[ModelEngine] = EnginesReg.get_model(model_path)
+    model: ModelEngine | None = EnginesReg.get_model(model_path)
     if model is None:
         raise SystemError('Error creating detection model.')
     return model
@@ -51,7 +50,7 @@ def detect_model() -> ModelEngine:
 @fixture
 def obb_model() -> ModelEngine:
     model_path: Path = MODELS_PATH / 'OBBModelNCNN'
-    model: Optional[ModelEngine] = EnginesReg.get_model(model_path)
+    model: ModelEngine | None = EnginesReg.get_model(model_path)
     if model is None:
         raise SystemError('Error creating obb model.')
     return model
@@ -68,7 +67,7 @@ def imagenet_imgs() -> dict[Path, dict]:
         }
     }
     for img_path in imgs.keys():
-        img: Optional[np.ndarray] = cv2.imread(img_path)
+        img: np.ndarray | None = cv2.imread(img_path)
         if img is None:
             continue
         imgs[img_path]['img'] = img
@@ -86,7 +85,7 @@ def coco_imgs() -> dict[Path, dict]:
         }
     }
     for img_path in imgs.keys():
-        img: Optional[np.ndarray] = cv2.imread(img_path)
+        img: np.ndarray | None = cv2.imread(img_path)
         if img is None:
             continue
         imgs[img_path]['img'] = img
@@ -104,7 +103,7 @@ def dota_imgs() -> dict[Path, dict]:
         }
     }
     for img_path in imgs.keys():
-        img: Optional[np.ndarray] = cv2.imread(img_path)
+        img: np.ndarray | None = cv2.imread(img_path)
         if img is None:
             continue
         imgs[img_path]['img'] = img

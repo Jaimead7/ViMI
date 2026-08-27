@@ -21,7 +21,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Protocol
+from typing import Any, ClassVar, Protocol
 
 import numpy as np
 
@@ -62,13 +62,13 @@ class EnginesReg:
         cls._engine_cls.pop(name.upper(), None)
 
     @classmethod
-    def get_model(cls, model_path: Path) -> Optional[ModelEngine]:
-        model: Optional[ModelEngine] = cls._engines.get(model_path, None)
+    def get_model(cls, model_path: Path) -> ModelEngine | None:
+        model: ModelEngine | None = cls._engines.get(model_path, None)
         if model is not None:
             return model
         try:
             model_folder: ModelFolder = ModelFolder(path= model_path)
-            engine_cls: Optional[type[ModelEngine]] = cls._engine_cls.get(
+            engine_cls: type[ModelEngine] | None = cls._engine_cls.get(
                 model_folder.model_type,
                 None
             )
