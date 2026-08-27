@@ -25,10 +25,13 @@ from math import degrees
 from typing import Any, Optional
 
 import numpy as np
-from typing_extensions import Self, TypedDict
+from pydantic import ConfigDict, Field
+from typing_extensions import Self
 
 from .plot import PALLETTE, Color, plot_label, plot_polygon
 from .utils.boxes import norm_coords, xywhr2xyxyxyxy, xyxy2xywh
+from .utils.models import BaseModel
+from .utils.tools import deprecated
 
 
 def _parse_np_str(array: np.ndarray) -> str:
@@ -40,10 +43,22 @@ def _parse_np_str(array: np.ndarray) -> str:
     )
 
 
-class SpeedDict(TypedDict):
-    preprocess: Optional[float]
-    inference: Optional[float]
-    postprocess: Optional[float]
+class SpeedDict(BaseModel):
+    preprocess: float = Field(ge= 0, default= 0)
+    inference: float = Field(ge= 0, default= 0)
+    postprocess: float = Field(ge= 0, default= 0)
+
+    @deprecated('attribute access')
+    def __getitem__(self, key: str) -> float:
+        try:
+            return getattr(self, key)
+        except Exception:
+            msg: str = f'"{key}" is not a valid key for {self.__class__.__name__}.'
+            raise KeyError(msg)
+
+    @deprecated('attribute access')
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
 
 
 class ResultDataWrapper:
@@ -473,7 +488,7 @@ class Results:
         self.set_probs(probs= probs)
         self.set_keypoints(keypoints= keypoints)
         self.set_obb(obb= obb)
-        self.speed: SpeedDict = speed if speed is not None else SpeedDict(preprocess= None, inference= None, postprocess= None)
+        self.speed: SpeedDict = speed if speed is not None else SpeedDict()
         self._keys = ('boxes', 'masks', 'probs', 'keypoints', 'obb')
 
     def __repr__(self) -> str:

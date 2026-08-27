@@ -273,7 +273,7 @@ class NCCEngine:
             redim_img, aux_t = self.redim(filter_img)
             transformers.append(aux_t)
             in_img: ncnn.Mat = self.preprocess(redim_img)
-            speed['preprocess'] = (datetime.now(timezone.utc) - start_time).microseconds / 1000.
+            speed.preprocess = (datetime.now(timezone.utc) - start_time).microseconds / 1000.
             # Inference
             start_time = datetime.now(timezone.utc)
             with self._net.create_extractor() as ex:
@@ -281,7 +281,7 @@ class NCCEngine:
                 out0: ncnn.Mat
                 ret: int
                 ret, out0 = ex.extract('out0')
-            speed['inference'] = (datetime.now(timezone.utc) - start_time).microseconds / 1000.
+            speed.inference = (datetime.now(timezone.utc) - start_time).microseconds / 1000.
             # Prost-process
             start_time = datetime.now(timezone.utc)
             result: Results = Results(
@@ -295,7 +295,7 @@ class NCCEngine:
                 ncc_out= out0,
                 transformers= transformers
             )
-            result.speed['postprocess'] = (datetime.now(timezone.utc) - start_time).microseconds / 1000.
+            result.speed.postprocess = (datetime.now(timezone.utc) - start_time).microseconds / 1000.
             results.append(result)
         return results
 
