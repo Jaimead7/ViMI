@@ -25,7 +25,7 @@ from math import degrees
 from typing import Any, Optional
 
 import numpy as np
-from pydantic import ConfigDict, Field
+from pydantic import Field
 from typing_extensions import Self
 
 from .plot import PALLETTE, Color, plot_label, plot_polygon
