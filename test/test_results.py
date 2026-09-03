@@ -186,4 +186,31 @@ class TestSpeedDict:
             res['preprocess'] = pre
             res['inference'] = inf
             res['postprocess'] = post
-        
+
+
+class TestResultDataWrapper:
+    ... #TODO
+
+
+class TestBoxes:
+    ... #TODO
+
+
+class TestMasks:
+    ... #TODO
+
+
+class TestProbs:
+    ... #TODO
+
+
+class TestKeypoints:
+    ... #TODO
+
+
+class TestOBB:
+    ... #TODO
+
+
+class TestResults:
+    ... #TODO
