@@ -41,6 +41,39 @@ def generic_array() -> np.ndarray:
         ]
     )
 
+@fixture
+def generic_gray_img() -> np.ndarray:
+    return np.array(
+        [
+            [0, 255, 0, 255],
+            [255, 0, 255, 0],
+            [0, 255, 0, 255],
+            [255, 0, 255, 0]
+        ]
+    ).astype(np.uint8)
+
+@fixture
+def generic_bgr_img() -> np.ndarray:
+    return np.array(
+        [
+            [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 0, 0]],
+            [[0, 255, 0], [0, 0, 255], [255, 0, 0], [0, 255, 0]],
+            [[0, 0, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]],
+            [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 0, 0]]
+        ]
+    ).astype(np.uint8)
+
+@fixture
+def generic_rgb_img() -> np.ndarray:
+    return np.array(
+        [
+            [[0, 0, 255], [0, 255, 0], [255, 0, 0], [0, 0, 255]],
+            [[0, 255, 0], [255, 0, 0], [0, 0, 255], [0, 255, 0]],
+            [[255, 0, 0], [0, 0, 255], [0, 255, 0], [255, 0, 0]],
+            [[0, 0, 255], [0, 255, 0], [255, 0, 0], [0, 0, 255]]
+        ]
+    ).astype(np.uint8)
+
 
 class TestCoordsTransformer:
     @mark.parametrize(
@@ -55,8 +88,8 @@ class TestCoordsTransformer:
     )
     def test_constructor(
         self,
-        scale: Sequence,
-        offset: Sequence,
+        scale: tuple[float, float],
+        offset: tuple[int, int],
         expected: Sequence
     ) -> None:
         transformer: CoordsTransformer = CoordsTransformer(scale= scale, offset= offset)
@@ -77,8 +110,8 @@ class TestCoordsTransformer:
     )
     def test_constructor_errors(
         self,
-        scale: Sequence,
-        offset: Sequence,
+        scale: tuple[float, float],
+        offset: tuple[int, int],
         error: type[Exception]
     ) -> None:
         with raises(error):
@@ -97,8 +130,8 @@ class TestCoordsTransformer:
     def test_res2org(
         self,
         generic_array: np.ndarray,
-        scale: Sequence,
-        offset: Sequence,
+        scale: tuple[float, float],
+        offset: tuple[int, int],
         expected: Sequence
     ) -> None:
         transformer: CoordsTransformer = CoordsTransformer(scale= scale, offset= offset)
@@ -117,8 +150,8 @@ class TestCoordsTransformer:
     def test_org2res(
         self,
         generic_array: np.ndarray,
-        scale: Sequence,
-        offset: Sequence,
+        scale: tuple[float, float],
+        offset: tuple[int, int],
         expected: Sequence
     ) -> None:
         transformer: CoordsTransformer = CoordsTransformer(scale= scale, offset= offset)
@@ -137,8 +170,8 @@ class TestCoordsTransformer:
     def test_xywh2org(
         self,
         generic_array: np.ndarray,
-        scale: Sequence,
-        offset: Sequence,
+        scale: tuple[float, float],
+        offset: tuple[int, int],
         expected: Sequence
     ) -> None:
         transformer: CoordsTransformer = CoordsTransformer(scale= scale, offset= offset)
@@ -157,9 +190,255 @@ class TestCoordsTransformer:
     def test_org2xywh(
         self,
         generic_array: np.ndarray,
-        scale: Sequence,
-        offset: Sequence,
+        scale: tuple[float, float],
+        offset: tuple[int, int],
         expected: Sequence
     ) -> None:
         transformer: CoordsTransformer = CoordsTransformer(scale= scale, offset= offset)
         assert np.array_equal(transformer.org2xywh(xywh= generic_array), expected)
+
+
+class TestImageFiltersReg:
+    ...
+
+
+class TestResize:
+    @mark.parametrize(
+            'w, h, img_expected, trans_exp',
+            [
+                (5, 5, np.array([[0, 178, 127, 76, 255], [179, 107, 127, 148, 76], [128, 127, 128, 127, 128], [76, 148, 127, 107 ,179], [255, 76, 127, 178, 0]], dtype= np.uint8), CoordsTransformer(scale= (1.25, 1.25))),
+                (2, 2, np.array([[128, 128], [128, 128]], dtype= np.uint8), CoordsTransformer(scale= (0.5, 0.5))),
+            ]
+        )
+    def test_resize_gray(
+        self,
+        w: int,
+        h: int,
+        img_expected: np.ndarray,
+        trans_exp: CoordsTransformer,
+        generic_gray_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = resize(img= generic_gray_img, width= w, height= h)
+        assert np.array_equal(res, img_expected)
+        assert trans == trans_exp
+
+    @mark.parametrize(
+            'w, h, img_expected, trans_exp',
+            [
+                (5, 5, np.array([[[255, 0, 0], [76, 178, 0], [0, 127, 127], [76, 0, 178], [255, 0, 0]], [[76, 179, 0], [23, 107, 125], [89, 38, 127], [148, 54, 54], [76, 179, 0]], [[0, 128, 128], [89, 38, 127], [128, 64, 64], [89, 127, 38], [0, 128, 128]], [[76, 0, 179], [148, 54, 54], [89, 127, 38], [23, 125, 107], [76, 0, 179]], [[255, 0, 0], [76, 178, 0], [0, 127, 127], [76, 0, 178], [255, 0, 0]]], dtype= np.uint8), CoordsTransformer(scale= (1.25, 1.25))),
+                (2, 2, np.array([[[64, 128, 64], [128, 64, 64]], [[128, 64, 64], [64, 64, 128]]], dtype= np.uint8), CoordsTransformer(scale= (0.5, 0.5))),
+            ]
+        )
+    def test_resize_bgr(
+        self,
+        w: int,
+        h: int,
+        img_expected: np.ndarray,
+        trans_exp: CoordsTransformer,
+        generic_bgr_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = resize(img= generic_bgr_img, width= w, height= h)
+        assert np.array_equal(res, img_expected)
+        assert trans == trans_exp
+
+
+class TestRedim:
+    @mark.parametrize(
+            'w, h, img_expected, trans_exp',
+            [
+                (4, 5, np.array([[0, 255, 0, 255], [255, 0, 255, 0], [0, 255, 0, 255], [255, 0, 255, 0], [114, 114, 114, 114]], dtype= np.uint8), CoordsTransformer()),
+                (2, 2, np.array([[128, 128], [128, 128]], dtype= np.uint8), CoordsTransformer(scale= (0.5, 0.5))),
+                (3, 2, np.array([[128, 128, 114], [128, 128, 114]], dtype= np.uint8), CoordsTransformer(scale= (0.5, 0.5))),
+            ]
+        )
+    def test_redim_gray(
+        self,
+        w: int,
+        h: int,
+        img_expected: np.ndarray,
+        trans_exp: CoordsTransformer,
+        generic_gray_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = redim(img= generic_gray_img, width= w, height= h)
+        assert np.array_equal(res, img_expected)
+        assert trans == trans_exp
+
+    @mark.parametrize(
+            'w, h, img_expected, trans_exp',
+            [
+                (4, 5, np.array([[[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 0, 0]], [[0, 255, 0], [0, 0, 255], [255, 0, 0], [0, 255, 0]], [[0, 0, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]], [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 0, 0]], [[114, 114, 114], [114, 114, 114], [114, 114, 114], [114, 114, 114]]], dtype= np.uint8), CoordsTransformer()),
+                (2, 2, np.array([[[64, 128, 64], [128, 64, 64]], [[128, 64, 64], [64, 64, 128]]], dtype= np.uint8), CoordsTransformer(scale= (0.5, 0.5))),
+                (3, 2, np.array([[[64, 128, 64], [128, 64, 64], [114, 114, 114]], [[128, 64, 64], [64, 64, 128], [114, 114, 114]]], dtype= np.uint8), CoordsTransformer(scale= (0.5, 0.5))),
+            ]
+        )
+    def test_redim_bgr(
+        self,
+        w: int,
+        h: int,
+        img_expected: np.ndarray,
+        trans_exp: CoordsTransformer,
+        generic_bgr_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = redim(img= generic_bgr_img, width= w, height= h)
+        assert np.array_equal(res, img_expected)
+        assert trans == trans_exp
+
+
+class TestCut:
+    @mark.parametrize(
+        'p0, w, h, img_expected, trans_exp',
+        [
+            ((1, 1), 2, 2, np.array([[0, 255], [255, 0]], dtype= np.uint8), CoordsTransformer(offset= (1, 1))),
+            ((1, 1), 3, 2, np.array([[0, 255, 0], [255, 0, 255]], dtype= np.uint8), CoordsTransformer(offset= (1, 1))),
+            ((1, 1), 10, 10, np.array([[0, 255, 0], [255, 0, 255], [0, 255, 0]], dtype= np.uint8), CoordsTransformer(offset= (1, 1))),
+            ((10, 10), 10, 10, np.empty((0, 0), dtype= np.uint8), CoordsTransformer(offset= (4, 4))),
+            ((-5, -5), 2, 2, np.empty((0, 0), dtype= np.uint8), CoordsTransformer()),
+        ]
+    )
+    def test_cut_gray(
+        self,
+        p0: tuple[int, int],
+        w: int,
+        h: int,
+        img_expected: np.ndarray,
+        trans_exp: CoordsTransformer,
+        generic_gray_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = cut(img= generic_gray_img, p0= p0, width= w, height= h)
+        assert np.array_equal(res, img_expected)
+        assert trans == trans_exp
+
+    @mark.parametrize(
+        'p0, w, h, img_expected, trans_exp',
+        [
+            ((1, 1), 2, 2, np.array([[[0, 0, 255], [255, 0, 0]], [[255, 0, 0], [0, 255, 0]]], dtype= np.uint8), CoordsTransformer(offset= (1, 1))),
+            ((1, 1), 3, 2, np.array([[[0, 0, 255], [255, 0, 0], [0, 255, 0]], [[255, 0, 0], [0, 255, 0], [0, 0, 255]]], dtype= np.uint8), CoordsTransformer(offset= (1, 1))),
+            ((1, 1), 10, 10, np.array([[[0, 0, 255], [255, 0, 0], [0, 255, 0]], [[255, 0, 0], [0, 255, 0], [0, 0, 255]], [[0, 255, 0], [0, 0, 255], [255, 0, 0]]], dtype= np.uint8), CoordsTransformer(offset= (1, 1))),
+            ((10, 10), 10, 10, np.empty((0, 0, 3), dtype= np.uint8), CoordsTransformer(offset= (4, 4))),
+            ((-5, -5), 2, 2, np.empty((0, 0, 3), dtype= np.uint8), CoordsTransformer()),
+        ]
+    )
+    def test_cut_bgr(
+        self,
+        p0: tuple[int, int],
+        w: int,
+        h: int,
+        img_expected: np.ndarray,
+        trans_exp: CoordsTransformer,
+        generic_bgr_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = cut(img= generic_bgr_img, p0= p0, width= w, height= h)
+        assert np.array_equal(res, img_expected)
+        assert trans == trans_exp
+
+
+class TestBGR2GRAY:
+    def test_bgr2gray(
+        self,
+        generic_gray_img: np.ndarray,
+        generic_bgr_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = bgr2gray(img= generic_gray_img)
+        assert np.array_equal(res, generic_gray_img)
+        assert trans == CoordsTransformer()
+        res, trans = bgr2gray(img= generic_bgr_img)
+        expected: np.ndarray = np.array(
+            [
+                [29, 150, 76, 29],
+                [150, 76, 29, 150],
+                [76, 29, 150, 76],
+                [29, 150, 76, 29]
+            ],
+            dtype= np.uint8
+        )
+        assert np.array_equal(res, expected)
+        assert trans == CoordsTransformer()
+
+
+class TestGRAY2BGR:
+    def test_gray2bgr(
+        self,
+        generic_gray_img: np.ndarray,
+        generic_bgr_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = gray2bgr(img= generic_gray_img)
+        expected: np.ndarray = np.array(
+            [
+                [[0, 0, 0], [255, 255, 255], [0, 0, 0], [255, 255, 255]],
+                [[255, 255, 255], [0, 0, 0], [255, 255, 255], [0, 0, 0]],
+                [[0, 0, 0], [255, 255, 255], [0, 0, 0], [255, 255, 255]],
+                [[255, 255, 255], [0, 0, 0], [255, 255, 255], [0, 0, 0]]
+            ],
+            dtype= np.uint8
+        )
+        assert np.array_equal(res, expected)
+        assert trans == CoordsTransformer()
+        res, trans = gray2bgr(img= generic_bgr_img)
+        assert np.array_equal(res, generic_bgr_img)
+        assert trans == CoordsTransformer()
+
+
+class TestBGR2RGB:
+    def test_bgr2rgb(
+        self,
+        generic_gray_img: np.ndarray,
+        generic_bgr_img: np.ndarray,
+        generic_rgb_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = gray2bgr(img= generic_gray_img)
+        expected: np.ndarray = np.array(
+            [
+                [[0, 0, 0], [255, 255, 255], [0, 0, 0], [255, 255, 255]],
+                [[255, 255, 255], [0, 0, 0], [255, 255, 255], [0, 0, 0]],
+                [[0, 0, 0], [255, 255, 255], [0, 0, 0], [255, 255, 255]],
+                [[255, 255, 255], [0, 0, 0], [255, 255, 255], [0, 0, 0]]
+            ],
+            dtype= np.uint8
+        )
+        assert np.array_equal(res, expected)
+        res, trans = bgr2rgb(img= generic_bgr_img)
+        assert np.array_equal(res, generic_rgb_img)
+        assert trans == CoordsTransformer()
+
+
+class TestRGB2BGR:
+    def test_rgb2bgr(
+        self,
+        generic_gray_img: np.ndarray,
+        generic_bgr_img: np.ndarray,
+        generic_rgb_img: np.ndarray
+    ) -> None:
+        res: np.ndarray
+        trans: CoordsTransformer
+        res, trans = rgb2bgr(img= generic_gray_img)
+        expected: np.ndarray = np.array(
+            [
+                [[0, 0, 0], [255, 255, 255], [0, 0, 0], [255, 255, 255]],
+                [[255, 255, 255], [0, 0, 0], [255, 255, 255], [0, 0, 0]],
+                [[0, 0, 0], [255, 255, 255], [0, 0, 0], [255, 255, 255]],
+                [[255, 255, 255], [0, 0, 0], [255, 255, 255], [0, 0, 0]]
+            ],
+            dtype= np.uint8
+        )
+        assert np.array_equal(res, expected)
+        res, trans = rgb2bgr(img= generic_rgb_img)
+        assert np.array_equal(res, generic_bgr_img)
+        assert trans == CoordsTransformer()
