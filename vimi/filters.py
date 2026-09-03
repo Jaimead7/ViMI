@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, ClassVar, Protocol
 
 import cv2
@@ -31,18 +31,30 @@ from .logs import vimi_logger
 class CoordsTransformer:
     def __init__(
         self,
-        scale: tuple[float, float] = (1, 1),
-        offset: tuple[int, int] = (0, 0)
+        scale: Sequence[float] = (1, 1),
+        offset: Sequence[int] = (0, 0)
     ) -> None:
         self.scaleX: float
         self.scaleY: float
-        self.scaleX, self.scaleY = scale
-        self.offsetX: float
-        self.offsetY: float
-        self.offsetX, self.offsetY = offset
+        if len(scale) < 2:
+            raise ValueError(f'{self.__class__.__name__}.scale must be a Sequence >= 2.')
+        try:
+            self.scaleX, self.scaleY = float(scale[0]), float(scale[1])
+        except (TypeError, ValueError):
+            raise TypeError(f'{self.__class__.__name__}.scale elements must be float\'s.')
+        if self.scaleX <= 0 or self.scaleY <= 0:
+            raise ValueError(f'{self.__class__.__name__}.scale elements must be > 0.')
+        self.offsetX: int
+        self.offsetY: int
+        if len(offset) < 2:
+            raise ValueError(f'{self.__class__.__name__}.offset must be a Sequence >= 2.')
+        try:
+            self.offsetX, self.offsetY = int(offset[0]), int(offset[1])
+        except (TypeError, ValueError):
+            raise TypeError(f'{self.__class__.__name__}.offset elements must be int\'s.')
 
     def res2org(self, values: np.ndarray) -> np.ndarray:
-        values = values.copy()
+        values = values.copy().astype(np.float32)
         values[:,0] = (values[:, 0] / self.scaleX) + self.offsetX
         values[:,1] = (values[:, 1] / self.scaleY) + self.offsetY
         values[:,2] = (values[:, 2] / self.scaleX) + self.offsetX
@@ -50,7 +62,7 @@ class CoordsTransformer:
         return values
 
     def org2res(self, values: np.ndarray) -> np.ndarray:
-        values = values.copy()
+        values = values.copy().astype(np.float32)
         values[:,0] = (values[:, 0] - self.offsetX) * self.scaleX
         values[:,1] = (values[:, 1] - self.offsetY) * self.scaleY
         values[:,2] = (values[:, 2] - self.offsetX) * self.scaleX
@@ -58,7 +70,7 @@ class CoordsTransformer:
         return values
 
     def xywh2org(self, xywh: np.ndarray) -> np.ndarray:
-        values: np.ndarray = xywh.copy()
+        values: np.ndarray = xywh.copy().astype(np.float32)
         values[:,0] = (values[:, 0] / self.scaleX) + self.offsetX
         values[:,1] = (values[:, 1] / self.scaleY) + self.offsetY
         values[:,2] = values[:, 2] / self.scaleX
@@ -66,7 +78,7 @@ class CoordsTransformer:
         return values
 
     def org2xywh(self, xywh: np.ndarray) -> np.ndarray:
-        values: np.ndarray = xywh.copy()
+        values: np.ndarray = xywh.copy().astype(np.float32)
         values[:,0] = (values[:, 0] - self.offsetX) * self.scaleX
         values[:,1] = (values[:, 1] - self.offsetY) * self.scaleY
         values[:,2] = values[:, 2] * self.scaleX
