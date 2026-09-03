@@ -21,6 +21,7 @@
 
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Callable
 
 import cv2
 import numpy as np
@@ -40,6 +41,12 @@ def generic_array() -> np.ndarray:
             [8, 9, 10, 11]
         ]
     )
+
+@fixture
+def generic_filter() -> ImageFilter:
+    def filter(img: np.ndarray) -> tuple[np.ndarray, CoordsTransformer]:
+        return np.zeros((0, 0)), CoordsTransformer()
+    return filter
 
 @fixture
 def generic_gray_img() -> np.ndarray:
@@ -199,7 +206,29 @@ class TestCoordsTransformer:
 
 
 class TestImageFiltersReg:
-    ...
+    def test_no_instantiable(self) -> None:
+        with raises(RuntimeError):
+            ImageFiltersReg()
+
+    def test_register_unregister(self, generic_filter: ImageFilter) -> None:
+        filters_backup: dict[str, ImageFilter] = ImageFiltersReg._filters.copy()
+        try:
+            name = 'test'
+            decorator: Callable[[ImageFilter], ImageFilter] = ImageFiltersReg.register(name)
+            decorator(generic_filter)
+            assert ImageFiltersReg.get(name) == generic_filter
+            ImageFiltersReg.unregister(name)
+            assert ImageFiltersReg.get(name) == ImageFiltersReg.no_filter
+        finally:
+            ImageFiltersReg._filters = filters_backup
+
+    def test_clear(self) -> None:
+        filters_backup: dict[str, ImageFilter] = ImageFiltersReg._filters.copy()
+        try:
+            ImageFiltersReg.clear()
+            assert ImageFiltersReg._filters == dict()
+        finally:
+            ImageFiltersReg._filters = filters_backup
 
 
 class TestResize:

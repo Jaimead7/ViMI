@@ -112,7 +112,7 @@ class ImageFiltersReg:
     def __new__(cls) -> None:
         msg: str = f'Class "{cls.__name__}" is not instantiable.'
         vimi_logger.critical(msg)
-        raise TypeError(msg)
+        raise RuntimeError(msg)
 
     @staticmethod
     def no_filter(img: np.ndarray) -> tuple[np.ndarray, CoordsTransformer]:
