@@ -36,13 +36,35 @@ class CoordsTransformer:
     ) -> None:
         self.scaleX: float
         self.scaleY: float
-        self.scaleX, self.scaleY = scale
-        self.offsetX: float
-        self.offsetY: float
-        self.offsetX, self.offsetY = offset
+        if len(scale) < 2:
+            raise ValueError(f'{self.__class__.__name__}.scale must be a Sequence >= 2.')
+        try:
+            self.scaleX, self.scaleY = float(scale[0]), float(scale[1])
+        except (TypeError, ValueError):
+            raise TypeError(f'{self.__class__.__name__}.scale elements must be float\'s.')
+        if self.scaleX <= 0 or self.scaleY <= 0:
+            raise ValueError(f'{self.__class__.__name__}.scale elements must be > 0.')
+        self.offsetX: int
+        self.offsetY: int
+        if len(offset) < 2:
+            raise ValueError(f'{self.__class__.__name__}.offset must be a Sequence >= 2.')
+        try:
+            self.offsetX, self.offsetY = int(offset[0]), int(offset[1])
+        except (TypeError, ValueError):
+            raise TypeError(f'{self.__class__.__name__}.offset elements must be int\'s.')
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return all((
+            self.scaleX == other.scaleX,
+            self.scaleY == other.scaleY,
+            self.offsetX == self.offsetX,
+            self.offsetY == other.offsetY
+        ))
 
     def res2org(self, values: np.ndarray) -> np.ndarray:
-        values = values.copy()
+        values = values.copy().astype(np.float32)
         values[:,0] = (values[:, 0] / self.scaleX) + self.offsetX
         values[:,1] = (values[:, 1] / self.scaleY) + self.offsetY
         values[:,2] = (values[:, 2] / self.scaleX) + self.offsetX
@@ -50,7 +72,7 @@ class CoordsTransformer:
         return values
 
     def org2res(self, values: np.ndarray) -> np.ndarray:
-        values = values.copy()
+        values = values.copy().astype(np.float32)
         values[:,0] = (values[:, 0] - self.offsetX) * self.scaleX
         values[:,1] = (values[:, 1] - self.offsetY) * self.scaleY
         values[:,2] = (values[:, 2] - self.offsetX) * self.scaleX
@@ -58,7 +80,7 @@ class CoordsTransformer:
         return values
 
     def xywh2org(self, xywh: np.ndarray) -> np.ndarray:
-        values: np.ndarray = xywh.copy()
+        values: np.ndarray = xywh.copy().astype(np.float32)
         values[:,0] = (values[:, 0] / self.scaleX) + self.offsetX
         values[:,1] = (values[:, 1] / self.scaleY) + self.offsetY
         values[:,2] = values[:, 2] / self.scaleX
@@ -66,7 +88,7 @@ class CoordsTransformer:
         return values
 
     def org2xywh(self, xywh: np.ndarray) -> np.ndarray:
-        values: np.ndarray = xywh.copy()
+        values: np.ndarray = xywh.copy().astype(np.float32)
         values[:,0] = (values[:, 0] - self.offsetX) * self.scaleX
         values[:,1] = (values[:, 1] - self.offsetY) * self.scaleY
         values[:,2] = values[:, 2] * self.scaleX
@@ -90,7 +112,7 @@ class ImageFiltersReg:
     def __new__(cls) -> None:
         msg: str = f'Class "{cls.__name__}" is not instantiable.'
         vimi_logger.critical(msg)
-        raise TypeError(msg)
+        raise RuntimeError(msg)
 
     @staticmethod
     def no_filter(img: np.ndarray) -> tuple[np.ndarray, CoordsTransformer]:
@@ -148,8 +170,8 @@ def resize(
 @ImageFiltersReg.register('REDIM')
 def redim(
     img: np.ndarray,
-    height: int = 640,
     width: int = 640,
+    height: int = 640,
     gray: int = 114
 ) -> tuple[np.ndarray, CoordsTransformer]:
     org_h: int
@@ -163,7 +185,10 @@ def redim(
         (new_w, new_h),
         interpolation= cv2.INTER_LINEAR
     )
-    result: np.ndarray = np.ones((height, width, 3), dtype= np.uint8) * gray
+    if len(img.shape) == 2:
+        result: np.ndarray = np.ones((height, width), dtype= np.uint8) * gray
+    else:
+        result: np.ndarray = np.ones((height, width, 3), dtype= np.uint8) * gray
     result[:new_h, :new_w] = img_resized
     transformer: CoordsTransformer = CoordsTransformer(
         scale= (scale, scale),
