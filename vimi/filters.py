@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import Any, ClassVar, Protocol
 
 import cv2
@@ -31,8 +31,8 @@ from .logs import vimi_logger
 class CoordsTransformer:
     def __init__(
         self,
-        scale: Sequence[float] = (1, 1),
-        offset: Sequence[int] = (0, 0)
+        scale: tuple[float, float] = (1, 1),
+        offset: tuple[int, int] = (0, 0)
     ) -> None:
         self.scaleX: float
         self.scaleY: float
@@ -52,6 +52,16 @@ class CoordsTransformer:
             self.offsetX, self.offsetY = int(offset[0]), int(offset[1])
         except (TypeError, ValueError):
             raise TypeError(f'{self.__class__.__name__}.offset elements must be int\'s.')
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return all((
+            self.scaleX == other.scaleX,
+            self.scaleY == other.scaleY,
+            self.offsetX == self.offsetX,
+            self.offsetY == other.offsetY
+        ))
 
     def res2org(self, values: np.ndarray) -> np.ndarray:
         values = values.copy().astype(np.float32)
@@ -160,8 +170,8 @@ def resize(
 @ImageFiltersReg.register('REDIM')
 def redim(
     img: np.ndarray,
-    height: int = 640,
     width: int = 640,
+    height: int = 640,
     gray: int = 114
 ) -> tuple[np.ndarray, CoordsTransformer]:
     org_h: int
@@ -175,7 +185,10 @@ def redim(
         (new_w, new_h),
         interpolation= cv2.INTER_LINEAR
     )
-    result: np.ndarray = np.ones((height, width, 3), dtype= np.uint8) * gray
+    if len(img.shape) == 2:
+        result: np.ndarray = np.ones((height, width), dtype= np.uint8) * gray
+    else:
+        result: np.ndarray = np.ones((height, width, 3), dtype= np.uint8) * gray
     result[:new_h, :new_w] = img_resized
     transformer: CoordsTransformer = CoordsTransformer(
         scale= (scale, scale),
